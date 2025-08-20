@@ -2,6 +2,7 @@ Package: superzarathu
 Type: Package
 Title: Generate Custom Commands for Data Analysis Workflows
 Version: 0.1.0
+Author: Zarathu Corp <contact@zarathu.com>
 Authors@R: c(
     person("Zarathu", "Corp", email = "contact@zarathu.com", role = c("aut", "cre")),
     person("Jinseob", "Kim", email = "jinseob2kim@zarathu.com", role = "aut")
