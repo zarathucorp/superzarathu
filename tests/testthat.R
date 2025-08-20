@@ -1,4 +1,4 @@
 library(testthat)
-library(myrpackage)
+library(superzarathu)
 
-test_check("myrpackage")
+test_check("superzarathu")

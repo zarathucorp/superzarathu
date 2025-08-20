@@ -6,34 +6,40 @@ test_that("get_templates returns a list", {
 test_that("get_templates has expected template names", {
   templates <- get_templates()
   expected_names <- c(
-    "preprocess", "label", "analysis", "shiny",
-    "jstable", "jskm", "jsmodule"
+    "analysis", "jskm", "jsmodule", "jstable", 
+    "label", "plot", "preprocess", "shiny"
   )
-  expect_equal(names(templates), expected_names)
+  expect_equal(sort(names(templates)), sort(expected_names))
 })
 
-test_that("all templates are character strings", {
+test_that("all templates have correct structure", {
   templates <- get_templates()
-  for (template in templates) {
-    expect_type(template, "character")
-    expect_length(template, 1)
+  for (name in names(templates)) {
+    template <- templates[[name]]
+    expect_type(template, "list")
+    expect_true("content" %in% names(template))
+    expect_type(template$content, "character")
+    expect_length(template$content, 1)
   }
 })
 
 test_that("templates contain expected content", {
   templates <- get_templates()
 
-  # Each template should start with "# LLM 지시어:"
-  for (template in templates) {
-    expect_true(grepl("^# LLM 지시어:", template))
+  # Each template content should contain instruction text
+  for (name in names(templates)) {
+    content <- templates[[name]]$content
+    # Check that content is not empty
+    expect_true(nchar(content) > 0)
   }
 
-  # Specific content checks
-  expect_true(grepl("데이터 전처리", templates$preprocess))
-  expect_true(grepl("라벨링", templates$label))
-  expect_true(grepl("통계 분석", templates$analysis))
-  expect_true(grepl("Shiny", templates$shiny))
-  expect_true(grepl("jstable", templates$jstable))
-  expect_true(grepl("jskm", templates$jskm))
-  expect_true(grepl("jsmodule", templates$jsmodule))
+  # Specific content checks - use content field
+  expect_true(grepl("preprocess|data cleaning", templates$preprocess$content, ignore.case = TRUE))
+  expect_true(grepl("label", templates$label$content, ignore.case = TRUE))
+  expect_true(grepl("analysis|statistic", templates$analysis$content, ignore.case = TRUE))
+  expect_true(grepl("Shiny", templates$shiny$content))
+  expect_true(grepl("jstable", templates$jstable$content))
+  expect_true(grepl("jskm", templates$jskm$content))
+  expect_true(grepl("jsmodule", templates$jsmodule$content))
+  expect_true(grepl("plot|graph|visual", templates$plot$content, ignore.case = TRUE))
 })

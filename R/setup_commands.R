@@ -41,7 +41,7 @@ get_templates <- function() {
     
     # Add argument support section at the beginning
     argument_section <- sprintf(
-      "## 사용자 입력 인수\n$ARGUMENTS\n\n참고: 사용자가 제공한 옵션을 다음과 같이 해석하세요:\n%s\n\n예시: $ARGUMENTS\n\n",
+      "## \uc0ac\uc6a9\uc790 \uc785\ub825 \uc778\uc218\n$ARGUMENTS\n\n\ucc38\uace0: \uc0ac\uc6a9\uc790\uac00 \uc81c\uacf5\ud55c \uc635\uc158\uc744 \ub2e4\uc74c\uacfc \uac19\uc774 \ud574\uc11d\ud558\uc138\uc694:\n%s\n\n\uc608\uc2dc: $ARGUMENTS\n\n",
       get_argument_description(template_name)
     )
     
@@ -76,14 +76,14 @@ get_templates <- function() {
 #' @return Character string with argument descriptions
 get_argument_description <- function(template_name) {
   descriptions <- list(
-    preprocess = "- --input 또는 첫 번째 인수: 입력 데이터 파일 경로 (CSV/Excel)\n- --output: 출력 RDS 파일 경로 (기본값: processed_data.rds)\n- --encoding: 파일 인코딩 (기본값: UTF-8, 대안: CP949)\n- --chunk-size: 대용량 데이터 처리 시 청크 크기",
-    label = "- --data 또는 첫 번째 인수: 전처리된 RDS 데이터 파일\n- --codebook: 코드북 Excel 파일 경로 (선택사항)\n- --output: 출력 RDS 파일 경로 (기본값: labeled_data.rds)",
-    analysis = "- --data 또는 첫 번째 인수: 라벨링된 RDS 데이터 파일\n- --outcome: 결과 변수명 (종속변수)\n- --group: 그룹 비교 변수명\n- --covariates: 공변량 변수들 (쉼표로 구분)\n- --method: 분석 방법 (linear, logistic, cox 등)",
-    shiny = "- --data 또는 첫 번째 인수: 분석용 RDS 데이터 파일\n- --title: 앱 제목 (기본값: Data Explorer)\n- --port: 앱 실행 포트 (기본값: 자동)\n- --theme: UI 테마 (기본값: default)",
-    jstable = "- --data 또는 첫 번째 인수: RDS 데이터 파일\n- --strata: 층화 변수 (그룹 비교용)\n- --vars: Table 1에 포함할 변수들 (쉼표로 구분)\n- --output: 출력 형식 (html, word, excel)",
-    jskm = "- --data 또는 첫 번째 인수: RDS 데이터 파일\n- --time: 시간 변수명\n- --event: 이벤트 변수명\n- --group: 그룹 변수명 (선택사항)\n- --timeby: X축 시간 간격 (기본값: 365)",
-    jsmodule = "- --data 또는 첫 번째 인수: RDS 데이터 파일\n- --modules: 포함할 모듈들 (data,table1,km,cox 중 선택, 쉼표로 구분)\n- --title: 앱 제목",
-    plot = "- --data 또는 첫 번째 인수: RDS 데이터 파일\n- --type: 플롯 유형 (bar, scatter, box, survival 등)\n- --x: X축 변수명\n- --y: Y축 변수명\n- --group: 그룹 변수명\n- --output: PowerPoint 출력 파일명 (기본값: plots.pptx)"
+    preprocess = "- --input \ub610\ub294 \uccab \ubc88\uc9f8 \uc778\uc218: \uc785\ub825 \ub370\uc774\ud130 \ud30c\uc77c \uacbd\ub85c (CSV/Excel)\n- --output: \ucd9c\ub825 RDS \ud30c\uc77c \uacbd\ub85c (\uae30\ubcf8\uac12: processed_data.rds)\n- --encoding: \ud30c\uc77c \uc778\ucf54\ub529 (\uae30\ubcf8\uac12: UTF-8, \ub300\uc548: CP949)\n- --chunk-size: \ub300\uc6a9\ub7c9 \ub370\uc774\ud130 \ucc98\ub9ac \uc2dc \uccad\ud06c \ud06c\uae30",
+    label = "- --data \ub610\ub294 \uccab \ubc88\uc9f8 \uc778\uc218: \uc804\ucc98\ub9ac\ub41c RDS \ub370\uc774\ud130 \ud30c\uc77c\n- --codebook: \ucf54\ub4dc\ubd81 Excel \ud30c\uc77c \uacbd\ub85c (\uc120\ud0dd\uc0ac\ud56d)\n- --output: \ucd9c\ub825 RDS \ud30c\uc77c \uacbd\ub85c (\uae30\ubcf8\uac12: labeled_data.rds)",
+    analysis = "- --data \ub610\ub294 \uccab \ubc88\uc9f8 \uc778\uc218: \ub77c\ubca8\ub9c1\ub41c RDS \ub370\uc774\ud130 \ud30c\uc77c\n- --outcome: \uacb0\uacfc \ubcc0\uc218\uba85 (\uc885\uc18d\ubcc0\uc218)\n- --group: \uadf8\ub8f9 \ube44\uad50 \ubcc0\uc218\uba85\n- --covariates: \uacf5\ubcc0\ub7c9 \ubcc0\uc218\ub4e4 (\uc27c\ud45c\ub85c \uad6c\ubd84)\n- --method: \ubd84\uc11d \ubc29\ubc95 (linear, logistic, cox \ub4f1)",
+    shiny = "- --data \ub610\ub294 \uccab \ubc88\uc9f8 \uc778\uc218: \ubd84\uc11d\uc6a9 RDS \ub370\uc774\ud130 \ud30c\uc77c\n- --title: \uc571 \uc81c\ubaa9 (\uae30\ubcf8\uac12: Data Explorer)\n- --port: \uc571 \uc2e4\ud589 \ud3ec\ud2b8 (\uae30\ubcf8\uac12: \uc790\ub3d9)\n- --theme: UI \ud14c\ub9c8 (\uae30\ubcf8\uac12: default)",
+    jstable = "- --data \ub610\ub294 \uccab \ubc88\uc9f8 \uc778\uc218: RDS \ub370\uc774\ud130 \ud30c\uc77c\n- --strata: \uce35\ud654 \ubcc0\uc218 (\uadf8\ub8f9 \ube44\uad50\uc6a9)\n- --vars: Table 1\uc5d0 \ud3ec\ud568\ud560 \ubcc0\uc218\ub4e4 (\uc27c\ud45c\ub85c \uad6c\ubd84)\n- --output: \ucd9c\ub825 \ud615\uc2dd (html, word, excel)",
+    jskm = "- --data \ub610\ub294 \uccab \ubc88\uc9f8 \uc778\uc218: RDS \ub370\uc774\ud130 \ud30c\uc77c\n- --time: \uc2dc\uac04 \ubcc0\uc218\uba85\n- --event: \uc774\ubca4\ud2b8 \ubcc0\uc218\uba85\n- --group: \uadf8\ub8f9 \ubcc0\uc218\uba85 (\uc120\ud0dd\uc0ac\ud56d)\n- --timeby: X\ucd95 \uc2dc\uac04 \uac04\uaca9 (\uae30\ubcf8\uac12: 365)",
+    jsmodule = "- --data \ub610\ub294 \uccab \ubc88\uc9f8 \uc778\uc218: RDS \ub370\uc774\ud130 \ud30c\uc77c\n- --modules: \ud3ec\ud568\ud560 \ubaa8\ub4c8\ub4e4 (data,table1,km,cox \uc911 \uc120\ud0dd, \uc27c\ud45c\ub85c \uad6c\ubd84)\n- --title: \uc571 \uc81c\ubaa9",
+    plot = "- --data \ub610\ub294 \uccab \ubc88\uc9f8 \uc778\uc218: RDS \ub370\uc774\ud130 \ud30c\uc77c\n- --type: \ud50c\ub86f \uc720\ud615 (bar, scatter, box, survival \ub4f1)\n- --x: X\ucd95 \ubcc0\uc218\uba85\n- --y: Y\ucd95 \ubcc0\uc218\uba85\n- --group: \uadf8\ub8f9 \ubcc0\uc218\uba85\n- --output: PowerPoint \ucd9c\ub825 \ud30c\uc77c\uba85 (\uae30\ubcf8\uac12: plots.pptx)"
   )
   
   return(descriptions[[template_name]] %||% "")
@@ -132,7 +132,7 @@ setup_gemini_commands <- function() {
 
     # Extract description from the first line
     first_line <- strsplit(prompt_content, "\n")[[1]][1]
-    description <- gsub("# LLM 지시어: ", "", first_line)
+    description <- gsub("# LLM \\uc9c0\\uc2dc\\uc5b4: ", "", first_line)
 
     # Construct TOML content
     toml_content <- sprintf(
@@ -199,7 +199,7 @@ setup_claude_commands <- function() {
 
     # Extract description from the first line
     first_line <- strsplit(prompt_content, "\n")[[1]][1]
-    description <- gsub("# LLM 지시어: ", "", first_line)
+    description <- gsub("# LLM \\uc9c0\\uc2dc\\uc5b4: ", "", first_line)
 
     # Construct Claude Code markdown content with frontmatter
     claude_content <- sprintf(
