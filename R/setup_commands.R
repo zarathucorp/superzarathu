@@ -22,12 +22,12 @@ get_templates <- function() {
   argument_hints <- list(
     preprocess = "--input <file> [--output <file>] [--encoding <type>]",
     label = "--data <file> [--codebook <file>] [--output <file>]",
-    analysis = "--data <file> --outcome <var> [--group <var>] [--method <type>]",
-    shiny = "--data <file> [--title <text>] [--port <number>]",
+    analysis = "[자유 형식 요청]",  # Natural language request
+    shiny = "[자유 형식 요청]",      # Natural language request
     jstable = "--data <file> [--strata <var>] [--vars <var1,var2>]",
     jskm = "--data <file> --time <var> --event <var> [--group <var>]",
     jsmodule = "--data <file> [--modules <module1,module2>] [--title <text>]",
-    plot = "--data <file> --type <plot> [--x <var>] [--y <var>] [--output <file>]"
+    plot = "[자유 형식 요청]"        # Natural language request
   )
   
   # Read each template file
@@ -39,22 +39,41 @@ get_templates <- function() {
     # Read the template content
     content <- paste(readLines(file, encoding = "UTF-8"), collapse = "\n")
     
-    # Add argument support section at the beginning
-    argument_section <- sprintf(
-      "## \uc0ac\uc6a9\uc790 \uc785\ub825 \uc778\uc218\n$ARGUMENTS\n\n\ucc38\uace0: \uc0ac\uc6a9\uc790\uac00 \uc81c\uacf5\ud55c \uc635\uc158\uc744 \ub2e4\uc74c\uacfc \uac19\uc774 \ud574\uc11d\ud558\uc138\uc694:\n%s\n\n\uc608\uc2dc: $ARGUMENTS\n\n",
-      get_argument_description(template_name)
-    )
+    # Check if this template should skip argument section
+    skip_args <- template_name %in% c("analysis", "plot", "shiny")
     
-    # Insert argument section after the title
-    lines <- strsplit(content, "\n")[[1]]
-    title_line <- grep("^#\\s+LLM", lines)[1]
-    if (!is.na(title_line)) {
-      content <- paste(c(
-        lines[1:title_line],
-        "",
-        argument_section,
-        lines[(title_line+1):length(lines)]
-      ), collapse = "\n")
+    if (!skip_args) {
+      # Add argument support section at the beginning
+      argument_section <- sprintf(
+        "## \uc0ac\uc6a9\uc790 \uc785\ub825 \uc778\uc218\n$ARGUMENTS\n\n\ucc38\uace0: \uc0ac\uc6a9\uc790\uac00 \uc81c\uacf5\ud55c \uc635\uc158\uc744 \ub2e4\uc74c\uacfc \uac19\uc774 \ud574\uc11d\ud558\uc138\uc694:\n%s\n\n\uc608\uc2dc: $ARGUMENTS\n\n",
+        get_argument_description(template_name)
+      )
+      
+      # Insert argument section after the title
+      lines <- strsplit(content, "\n")[[1]]
+      title_line <- grep("^#\\s+LLM", lines)[1]
+      if (!is.na(title_line)) {
+        content <- paste(c(
+          lines[1:title_line],
+          "",
+          argument_section,
+          lines[(title_line+1):length(lines)]
+        ), collapse = "\n")
+      }
+    } else {
+      # For analysis, plot, shiny - add simple request section
+      simple_section <- "## \uc0ac\uc6a9\uc790 \uc694\uccad\n$ARGUMENTS\n\n\uc0ac\uc6a9\uc790\uc758 \uc694\uccad\uc744 \ubd84\uc11d\ud558\uc5ec \uc801\uc808\ud55c \ubd84\uc11d, \uc2dc\uac01\ud654, \ub610\ub294 \uc571\uc744 \uc0dd\uc131\ud558\uc138\uc694.\n\uc608\uc2dc: '\ub370\uc774\ud130\ub97c \ubd84\uc11d\ud574\uc918', '\uc0dd\uc874 \ubd84\uc11d \uadf8\ub798\ud504 \uadf8\ub824\uc918', 'Shiny \ub300\uc2dc\ubcf4\ub4dc \ub9cc\ub4e4\uc5b4\uc918'\n\n"
+      
+      lines <- strsplit(content, "\n")[[1]]
+      title_line <- grep("^#\\s+LLM", lines)[1]
+      if (!is.na(title_line)) {
+        content <- paste(c(
+          lines[1:title_line],
+          "",
+          simple_section,
+          lines[(title_line+1):length(lines)]
+        ), collapse = "\n")
+      }
     }
     
     # Create template info
