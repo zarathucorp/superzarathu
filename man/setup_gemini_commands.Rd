@@ -7,7 +7,7 @@
 setup_gemini_commands()
 }
 \description{
-This function creates Gemini command TOML files in the ".gemini/commands" 
+This function creates Gemini command TOML files in the ".gemini/commands"
 directory using hardcoded templates for data analysis workflows.
 }
 \details{
@@ -17,7 +17,7 @@ preprocess, label, analysis, shiny, jstable, jskm, and jsmodule.
 }
 \examples{
 \dontrun{
-  # This will create .toml files in the .gemini/commands/ directory
-  setup_gemini_commands()
+# This will create .toml files in the .gemini/commands/ directory
+setup_gemini_commands()
 }
 }
