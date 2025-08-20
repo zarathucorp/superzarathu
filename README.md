@@ -23,16 +23,18 @@
 
 ## Available Templates
 
+All commands use the `sz:` prefix (e.g., `/sz:preprocess`, `gemini /sz:analysis`).
+
 | Template       | Description                                               | Named Arguments                                               |
 | -------------- | --------------------------------------------------------- | ------------------------------------------------------------- |
-| **preprocess** | Data cleaning and preparation using tidyverse             | `--input <file> [--output <file>] [--encoding <type>]`       |
-| **label**      | Data label and factor conversion with codebook support    | `--data <file> [--codebook <file>] [--output <file>]`        |
-| **analysis**   | Statistical analysis with gtsummary (Table 1, regression) | `--data <file> --outcome <var> [--group <var>] [--method]`   |
-| **shiny**      | Interactive web dashboard creation                        | `--data <file> [--title <text>] [--port <number>]`           |
-| **jstable**    | Korean medical statistics tables using jstable package    | `--data <file> [--strata <var>] [--vars <var1,var2>]`        |
-| **jskm**       | Kaplan-Meier survival curve visualization                 | `--data <file> --time <var> --event <var> [--group <var>]`   |
-| **jsmodule**   | Modular Shiny application development                     | `--data <file> [--modules <mod1,mod2>] [--title <text>]`     |
-| **plot**       | PowerPoint plot generation and insertion                  | `--data <file> --type <plot> [--x <var>] [--y <var>] [--output]` |
+| **sz:preprocess** | Data cleaning and preparation using tidyverse             | `--input <file> [--output <file>] [--encoding <type>]`       |
+| **sz:label**      | Data label and factor conversion with codebook support    | `--data <file> [--codebook <file>] [--output <file>]`        |
+| **sz:analysis**   | Statistical analysis with gtsummary (Table 1, regression) | `--data <file> --outcome <var> [--group <var>] [--method]`   |
+| **sz:shiny**      | Interactive web dashboard creation                        | `--data <file> [--title <text>] [--port <number>]`           |
+| **sz:jstable**    | Korean medical statistics tables using jstable package    | `--data <file> [--strata <var>] [--vars <var1,var2>]`        |
+| **sz:jskm**       | Kaplan-Meier survival curve visualization                 | `--data <file> --time <var> --event <var> [--group <var>]`   |
+| **sz:jsmodule**   | Modular Shiny application development                     | `--data <file> [--modules <mod1,mod2>] [--title <text>]`     |
+| **sz:plot**       | PowerPoint plot generation and insertion                  | `--data <file> --type <plot> [--x <var>] [--y <var>] [--output]` |
 
 ## Installation
 
@@ -58,14 +60,14 @@ This creates `.gemini/commands/` directory with TOML files. Use in terminal:
 
 ```bash
 # Basic usage
-gemini /preprocess  # Run data preprocess workflow
-gemini /analysis    # Generate statistical analysis
-gemini /shiny       # Create interactive dashboard
+gemini /sz:preprocess  # Run data preprocess workflow
+gemini /sz:analysis    # Generate statistical analysis
+gemini /sz:shiny       # Create interactive dashboard
 
 # With arguments (named parameters)
-gemini /preprocess --input data.csv --output clean_data.rds
-gemini /analysis --data data.rds --outcome death --group treatment
-gemini /jskm --data data.rds --time survival_time --event status --group treatment
+gemini /sz:preprocess --input data.csv --output clean_data.rds
+gemini /sz:analysis --data data.rds --outcome death --group treatment
+gemini /sz:jskm --data data.rds --time survival_time --event status --group treatment
 ```
 
 ### For Claude Code Users
@@ -81,14 +83,14 @@ This creates `.claude/commands/` directory with markdown files. Use in Claude Co
 
 ```
 # Basic usage
-/preprocess  # Run data preprocess workflow
-/analysis    # Generate statistical analysis
-/shiny       # Create interactive dashboard
+/sz:preprocess  # Run data preprocess workflow
+/sz:analysis    # Generate statistical analysis
+/sz:shiny       # Create interactive dashboard
 
 # With arguments (named parameters)
-/preprocess --input data.csv --output clean_data.rds
-/analysis --data data.rds --outcome death --group treatment
-/jskm --data data.rds --time survival_time --event status --group treatment
+/sz:preprocess --input data.csv --output clean_data.rds
+/sz:analysis --data data.rds --outcome death --group treatment
+/sz:jskm --data data.rds --time survival_time --event status --group treatment
 ```
 
 ## Example Workflow
@@ -106,22 +108,22 @@ setup_claude_commands()  # or setup_gemini_commands()
 
 ```bash
 # Step 1: Preprocess raw data
-/preprocess --input patient_data.csv --output processed.rds --encoding UTF-8
+/sz:preprocess --input patient_data.csv --output processed.rds --encoding UTF-8
 
 # Step 2: Apply labels from codebook
-/label --data processed.rds --codebook codebook.xlsx --output labeled.rds
+/sz:label --data processed.rds --codebook codebook.xlsx --output labeled.rds
 
 # Step 3: Generate statistical analysis
-/analysis --data labeled.rds --outcome mortality --group treatment --method logistic
+/sz:analysis --data labeled.rds --outcome mortality --group treatment --method logistic
 
 # Step 4: Create survival analysis
-/jskm --data labeled.rds --time survival_days --event death --group treatment
+/sz:jskm --data labeled.rds --time survival_days --event death --group treatment
 
 # Step 5: Build interactive dashboard
-/shiny --data labeled.rds --title "Clinical Trial Dashboard" --port 3838
+/sz:shiny --data labeled.rds --title "Clinical Trial Dashboard" --port 3838
 
 # Step 6: Generate presentation
-/plot --data labeled.rds --type survival --output results.pptx
+/sz:plot --data labeled.rds --type survival --output results.pptx
 ```
 
 ### Accessing Template Information

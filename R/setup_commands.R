@@ -105,7 +105,7 @@ get_argument_description <- function(template_name) {
 #' \dontrun{
 #' # This will create .toml files in the .gemini/commands/ directory
 #' setup_gemini_commands()
-#' # Usage: gemini /preprocess --input data.csv --output clean.rds
+#' # Usage: gemini /sz:preprocess --input data.csv --output clean.rds
 #' }
 setup_gemini_commands <- function() {
   # 1. Define directory
@@ -142,8 +142,8 @@ setup_gemini_commands <- function() {
       prompt_content
     )
 
-    # Write .toml file
-    toml_file_path <- file.path(gemini_dir, paste0(command_name, ".toml"))
+    # Write .toml file with sz: prefix
+    toml_file_path <- file.path(gemini_dir, paste0("sz:", command_name, ".toml"))
     con <- file(toml_file_path, "w", encoding = "UTF-8")
     writeLines(toml_content, con)
     close(con)
@@ -152,7 +152,7 @@ setup_gemini_commands <- function() {
   }
 
   message("\nGemini command setup complete from templates.")
-  message("Usage example: gemini /preprocess --input data.csv --output clean.rds")
+  message("Usage example: gemini /sz:preprocess --input data.csv --output clean.rds")
 }
 
 #' Setup Custom Claude Code Commands from Template Files
@@ -172,7 +172,7 @@ setup_gemini_commands <- function() {
 #' \dontrun{
 #' # This will create .md files in the .claude/commands/ directory
 #' setup_claude_commands()
-#' # Usage: /preprocess --input data.csv --output clean.rds
+#' # Usage: /sz:preprocess --input data.csv --output clean.rds
 #' }
 setup_claude_commands <- function() {
   # 1. Define directory
@@ -209,8 +209,8 @@ setup_claude_commands <- function() {
       prompt_content
     )
 
-    # Write .md file
-    claude_file_path <- file.path(claude_dir, paste0(command_name, ".md"))
+    # Write .md file with sz: prefix
+    claude_file_path <- file.path(claude_dir, paste0("sz:", command_name, ".md"))
     con <- file(claude_file_path, "w", encoding = "UTF-8")
     writeLines(claude_content, con)
     close(con)
@@ -219,5 +219,5 @@ setup_claude_commands <- function() {
   }
 
   message("\nClaude Code command setup complete from templates.")
-  message("Usage example: /preprocess --input data.csv --output clean.rds")
+  message("Usage example: /sz:preprocess --input data.csv --output clean.rds")
 }
