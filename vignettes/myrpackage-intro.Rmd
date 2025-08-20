@@ -1,0 +1,123 @@
+---
+title: "Getting Started with superzarathu"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with superzarathu}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(superzarathu)
+```
+
+# Introduction
+
+`superzarathu` is an R package that simplifies the creation of custom commands for data analysis workflows. It supports both Gemini CLI and Claude Code by automatically generating command files from predefined templates.
+
+## Key Features
+
+This package provides ready-to-use templates for common data analysis tasks:
+
+- **preprocess**: Data cleaning and preparation
+- **label**: Data label and factor conversion
+- **analysis**: Statistical analysis (descriptive and inferential)
+- **shiny**: Interactive web dashboard creation
+- **jstable**: Publication-ready statistical tables
+- **jskm**: Kaplan-Meier survival curve visualization
+- **jsmodule**: Modular Shiny application development
+
+## Quick Start
+
+### For Gemini CLI Users
+
+Generate Gemini CLI command files:
+
+```{r gemini-setup, eval=FALSE}
+# Creates .gemini/commands/ directory with TOML files
+setup_gemini_commands()
+```
+
+After running this function, you can use commands in Gemini CLI:
+
+```bash
+gemini preprocess  # Run data preprocess workflow
+gemini analysis      # Run statistical analysis workflow
+gemini shiny         # Create Shiny application
+```
+
+### For Claude Code Users
+
+Generate Claude Code slash commands:
+
+```{r claude-setup, eval=FALSE}
+# Creates .claude/commands/ directory with markdown files
+setup_claude_commands()
+```
+
+After running this function, you can use slash commands in Claude Code:
+
+```
+/preprocess  # Run data preprocess workflow
+/analysis      # Run statistical analysis workflow  
+/shiny         # Create Shiny application
+```
+
+## Available Templates
+
+You can explore the available templates and their content:
+
+```{r templates, eval=FALSE}
+# Get list of available templates
+templates <- get_templates()
+names(templates)
+
+# View a specific template
+cat(templates$preprocess)
+```
+
+### Template Descriptions
+
+- **preprocess**: Complete R workflow for data cleaning, transformation, and preparation using tidyverse
+- **label**: Automated and manual data label techniques including codebook integration
+- **analysis**: Statistical analysis pipeline with gtsummary for publication-ready tables
+- **shiny**: Interactive web dashboard template with filtering and visualization
+- **jstable**: Korean medical statistics package for Table 1 and regression tables
+- **jskm**: Kaplan-Meier survival analysis with publication-quality plots
+- **jsmodule**: Modular Shiny application framework for complex analytics
+
+## Workflow Example
+
+Here's a typical data analysis workflow using the generated commands:
+
+1. **Data preprocess**: Clean and prepare your raw data
+2. **Data label**: Apply appropriate labels and factor levels
+3. **Statistical Analysis**: Generate descriptive statistics and run models
+4. **Interactive Exploration**: Create Shiny dashboard for data exploration
+5. **Publication**: Generate publication-ready tables and figures
+
+## Best Practices
+
+- Always start with the `preprocess` template to ensure clean, tidy data
+- Use `label` template to make your data human-readable
+- Apply `analysis` template for standard statistical workflows
+- Consider `shiny` template for interactive data exploration
+- Use specialized templates (`jstable`, `jskm`, `jsmodule`) for advanced Korean medical statistics
+
+## Getting Help
+
+Each generated command includes detailed documentation and examples. The templates use placeholder syntax (e.g., `<variable_name>`) that should be replaced with your actual variable names and file paths.
+
+For package documentation:
+```{r help, eval=FALSE}
+?get_templates
+?setup_gemini_commands
+?setup_claude_commands
+```

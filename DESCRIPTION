@@ -1,0 +1,29 @@
+Package: superzarathu
+Type: Package
+Title: Generate Custom Commands for Data Analysis Workflows
+Version: 0.1.0
+Authors@R: c(
+    person("Zarathu", "Corp", email = "contact@zarathu.com", role = c("aut", "cre")),
+    person("Jinseob", "Kim", email = "jinseob2kim@zarathu.com", role = "aut")
+    )
+Maintainer: Zarathu Corp <contact@zarathu.com>
+Description: Provides templates and functions to generate custom commands for 
+    both Gemini CLI and Claude Code. Includes predefined workflows for data 
+    preprocess, label, statistical analysis, Shiny applications, and 
+    Korean medical statistics packages (jstable, jskm, jsmodule). Simplifies 
+    the creation of reproducible data analysis pipelines.
+License: MIT + file LICENSE
+URL: https://github.com/zarathucorp/superzarathu
+BugReports: https://github.com/zarathucorp/superzarathu/issues
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.2
+Suggests: 
+    dplyr (>= 1.0.0),
+    ggplot2,
+    yaml,
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
+
