@@ -1,9 +1,16 @@
-# LLM 지시어: R 데이터 전처리 수행 (강화 버전)
+# LLM 지시어: R 데이터 전처리 및 정제 (통합 버전)
 
-## 목표 (Objective)
-Raw data(csv, excel 등)를 불러와 분석에 적합한 형태로 정제하고 가공(Clean & Tidy)하여, 다음 분석 단계에 사용할 수 있는 `.rds` 파일을 생성한다. 특히 임상/의료 데이터에서 자주 발생하는 문제점들을 체계적으로 해결한다.
+## 목표
+원시 데이터를 분석 가능한 형태로 전처리하고, 데이터 품질 문제를 체계적으로 해결한다. 사용자의 자연어 요청을 해석하여 적절한 전처리를 수행한다.
 
-## 프로세스 (Process)
+## 사용자 요청 해석
+$ARGUMENTS를 분석하여:
+- "데이터 정제해줘" → 기본 정제 수행
+- "결측치 처리해줘" → NA 값 처리 중점
+- "이상치 제거해줘" → Outlier 탐지 및 제거
+- "중복 제거해줘" → 중복 행/열 제거
+
+## 핵심 처리 단계
 
 ### 1. 라이브러리 로드
 데이터 전처리에 필수적인 라이브러리를 로드한다.
@@ -17,33 +24,29 @@ library(VIM) # 결측치 패턴 분석
 library(pins) # AWS S3 연동 (필요시)
 ```
 
-### 2. 안전한 데이터 불러오기
-데이터 불러오기 시 발생할 수 있는 인코딩, 형식 문제를 예방한다.
+### 2. 지능형 데이터 로드
 ```R
-# === 방법 1: 로컬 파일 불러오기 ===
-tryCatch({
-  # CSV: 인코딩 자동 감지 또는 명시
-  raw_data <- read_csv("<path/to/your/data.csv>", 
-                       locale = locale(encoding = "UTF-8"), # 또는 "CP949"
-                       na = c("", "NA", "NULL", "-", "."))
+# 자동 파일 형식 및 인코딩 감지
+input_file <- "$INPUT_FILE"
+file_ext <- tools::file_ext(input_file)
+
+# 인코딩 자동 감지
+if(file_ext == "csv") {
+  encoding_guess <- guess_encoding(input_file)$encoding[1]
+  cat("감지된 인코딩:", encoding_guess, "\n")
   
-  # Excel: 첫 번째 시트 및 헤더 확인
-  # raw_data <- read_excel("<path/to/your/data.xlsx>", 
-  #                        sheet = 1, 
-  #                        skip = 0, # 헤더가 몇 번째 행에 있는지 확인
-  #                        na = c("", "NA", "NULL"))
-}, error = function(e) {
-  cat("데이터 로드 오류:", e$message, "\n")
-  cat("인코딩을 CP949로 재시도\n")
-  raw_data <- read_csv("<path/to/your/data.csv>", 
-                       locale = locale(encoding = "CP949"))
-})
+  df <- read_csv(input_file,
+                 locale = locale(encoding = encoding_guess),
+                 na = c("", "NA", "NULL", "-", ".", "N/A", "n/a"))
+} else if(file_ext %in% c("xlsx", "xls")) {
+  df <- read_excel(input_file,
+                   sheet = 1,
+                   na = c("", "NA", "NULL", "-", "."))
+} else {
+  stop("지원하지 않는 파일 형식: ", file_ext)
+}
 
-# === 방법 2: AWS S3에서 불러오기 (pins 패키지) ===
-# board_s3 <- board_s3(bucket = "<bucket-name>", region = "<region>")
-# raw_data <- pin_read(board_s3, "<data-name>")
-
-df <- raw_data
+cat("데이터 로드 성공:", nrow(df), "rows,", ncol(df), "columns\n")
 ```
 
 ### 3. 데이터 품질 초기 진단
@@ -72,31 +75,66 @@ duplicate_rows <- sum(duplicated(df))
 cat("완전 중복 행 수:", duplicate_rows, "\n\n")
 ```
 
-### 4. 변수명 및 기본 정제
-변수명을 정리하고 기본적인 데이터 정제를 수행한다.
+### 4. 통합 데이터 정제
 ```R
+# 사용자 요청 파싱
+request <- tolower("$ARGUMENTS")
+remove_outliers <- str_detect(request, "outlier|이상치")
+handle_na <- str_detect(request, "missing|결측|비어있")
+remove_duplicates <- str_detect(request, "duplicate|중복")
+
+# 기본 정제
 df_clean <- df %>%
-  # 변수명 정리 (공백, 특수문자 제거)
   clean_names() %>%
+  remove_empty(c("rows", "cols"))
+
+# 중복 제거 (요청 시 또는 기본)
+if(remove_duplicates | TRUE) {
+  before_rows <- nrow(df_clean)
+  df_clean <- df_clean %>% distinct()
+  cat("중복 제거:", before_rows - nrow(df_clean), "행\n")
+}
+
+# 결측치 처리
+if(handle_na) {
+  # NA 처리 전략
+  na_cols <- names(df_clean)[colSums(is.na(df_clean)) > 0]
   
-  # 완전 중복 행 제거
-  distinct() %>%
+  if(!is.null("$NA_COLS")) {
+    na_cols <- str_split("$NA_COLS", ",")[[1]]
+  }
   
-  # 빈 행/열 제거
-  remove_empty(c("rows", "cols")) %>%
-  
-  # 환자 ID 중복 확인 및 처리 (임상 데이터 특화)
-  {
-    if("patient_id" %in% names(.) | "id" %in% names(.)) {
-      id_col <- ifelse("patient_id" %in% names(.), "patient_id", "id")
-      dup_ids <- sum(duplicated(.[[id_col]], incomparables = NA))
-      if(dup_ids > 0) {
-        cat("경고: 환자 ID 중복", dup_ids, "건 발견\n")
-        cat("중복 처리 방법을 확인하세요\n")
+  for(col in na_cols) {
+    if(col %in% names(df_clean)) {
+      if(is.numeric(df_clean[[col]])) {
+        # 수치형: 평균 대체
+        df_clean[[col]][is.na(df_clean[[col]])] <- mean(df_clean[[col]], na.rm = TRUE)
+      } else {
+        # 문자형: 'Missing' 대체
+        df_clean[[col]][is.na(df_clean[[col]])] <- "Missing"
       }
     }
-    .
   }
+  cat("결측치 처리 완료:", length(na_cols), "개 열\n")
+}
+
+# 이상치 처리
+if(remove_outliers) {
+  numeric_cols <- names(df_clean)[sapply(df_clean, is.numeric)]
+  
+  for(col in numeric_cols) {
+    Q1 <- quantile(df_clean[[col]], 0.25, na.rm = TRUE)
+    Q3 <- quantile(df_clean[[col]], 0.75, na.rm = TRUE)
+    IQR <- Q3 - Q1
+    lower <- Q1 - 1.5 * IQR
+    upper <- Q3 + 1.5 * IQR
+    
+    outliers <- df_clean[[col]] < lower | df_clean[[col]] > upper
+    df_clean[[col]][outliers] <- NA
+    
+    cat(col, ": ", sum(outliers, na.rm = TRUE), " 이상치 처리\n")
+  }
+}
 ```
 
 ### 5. 의료/바이오 데이터 특화 처리

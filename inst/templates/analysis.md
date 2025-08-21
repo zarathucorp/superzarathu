@@ -1,102 +1,207 @@
-# LLM 지시어: R 통계 분석 수행
+# LLM 지시어: R 통계 분석 (지능형 통합 버전)
 
-## 목표 (Objective)
-라벨링이 완료된 데이터를 사용하여 기술 통계(Table 1) 및 주요 추론 통계(가설 검정, 회귀 분석)를 수행하고, 그 결과를 출판 가능한 수준의 표(Publication-ready table)로 정리한다.
+## 목표
+데이터를 분석하여 통계 결과를 생성한다. 사용자가 구체적인 분석 방법을 지정하거나, 자연어로 요청하면 적절한 분석을 자동 선택한다.
 
-## 입력 (Input)
-- 라벨링이 완료된 데이터프레임 (`labeled_df`)
+## 사용자 요청 해석
+$ARGUMENTS를 분석하여 적절한 분석 방법을 선택한다:
+- "그룹 간 차이를 분석해줘" → Table 1 + p-values
+- "회귀 분석 해줘" → Linear/Logistic regression
+- "생존 분석 해줘" → Kaplan-Meier + Cox regression
+- "연관성 분석" → Correlation matrix
 
-## 프로세스 (Process)
+## 핵심 처리 단계
 
-### 1. 라이브러리 로드
+### 1. 환경 설정 및 데이터 로드
 ```R
 library(tidyverse)
-# 기술 통계 및 회귀 분석 결과를 깔끔한 표로 만들기 위한 라이브러리
-library(gtsummary)
+library(gtsummary)  # 출판 수준 테이블
+library(jstable)    # 임상 통계 테이블
+library(survival)   # 생존 분석
+library(officer)    # PowerPoint 출력
+
+# 데이터 로드
+data <- readRDS("$DATA_FILE")
 ```
 
-### 2. 데이터 불러오기
-라벨링 단계에서 생성된 `.rds` 파일을 불러온다.
+### 2. 지능형 분석 선택
+사용자 요청을 해석하여 적절한 분석을 자동 수행한다.
+
 ```R
-labeled_df <- readRDS("<path/to/save/labeled_data.rds>")
+# 요청 파싱 및 분석 유형 결정
+request <- tolower("$ARGUMENTS")
+
+# 키워드 기반 분석 유형 자동 감지
+analysis_type <- case_when(
+  str_detect(request, "table 1|기술통계|요약|그룹 비교") ~ "table1",
+  str_detect(request, "회귀|regression|lm|glm") ~ "regression",
+  str_detect(request, "생존|survival|kaplan|cox") ~ "survival",
+  str_detect(request, "상관|연관|correlation") ~ "correlation",
+  str_detect(request, "t-test|t 검정") ~ "ttest",
+  str_detect(request, "anova|분산분석") ~ "anova",
+  TRUE ~ "table1"  # 기본값
+)
+
+cat("선택된 분석:", analysis_type, "\n")
 ```
 
-### 3. 기술 통계 분석 (Descriptive Statistics)
-`gtsummary` 패키지를 사용하여 "Table 1"을 생성한다.
-
-#### 3.1. 전체 그룹 요약 테이블
+### 3. Table 1 자동 생성
 ```R
-table1_overall <- labeled_df %>%
-  # Table 1에 포함할 변수 선택
-  select(`<변수1>`, `<변수2>`, `<변수3>`) %>%
-  tbl_summary(
-    statistic = list(
-      all_continuous() ~ "{mean} ({sd})", # 연속형 변수: 평균 (표준편차)
-      all_categorical() ~ "{n} ({p}%)"   # 범주형 변수: N (%)
-    ),
-    digits = all_continuous() ~ 1 # 소수점 자리수
-  ) %>%
-  bold_labels() # 변수명을 굵게
-
-# 테이블 출력
-table1_overall
+if(analysis_type == "table1") {
+  # 변수 자동 선택 (수치형 + 범주형 혼합)
+  vars_to_include <- data %>%
+    select(where(~ is.numeric(.) | is.factor(.))) %>%
+    names()
+  
+  # 그룹 변수 자동 감지 (2-3개 값만 가진 factor)
+  group_var <- data %>%
+    select(where(~ is.factor(.) & n_distinct(.) %in% c(2,3))) %>%
+    names() %>%
+    first()
+  
+  if(!is.null(group_var)) {
+    # 그룹 비교 Table 1
+    table1 <- data %>%
+      select(all_of(vars_to_include)) %>%
+      tbl_summary(
+        by = all_of(group_var),
+        statistic = list(
+          all_continuous() ~ "{mean} ± {sd}",
+          all_categorical() ~ "{n} ({p}%)"
+        ),
+        digits = all_continuous() ~ 1
+      ) %>%
+      add_p(test = list(
+        all_continuous() ~ "t.test",
+        all_categorical() ~ "chisq.test"
+      )) %>%
+      add_overall() %>%
+      modify_header(label ~ "**Variable**") %>%
+      bold_labels()
+  } else {
+    # 전체 요약 Table 1
+    table1 <- data %>%
+      tbl_summary(
+        statistic = list(
+          all_continuous() ~ "{mean} ± {sd}",
+          all_categorical() ~ "{n} ({p}%)"
+        )
+      )
+  }
+  
+  print(table1)
+}
 ```
 
-#### 3.2. 그룹 간 비교 테이블
-`by` 인자를 사용하여 그룹 간 변수를 비교하고 p-value를 계산한다.
+### 4. 회귀 분석 자동 수행
 ```R
-table1_grouped <- labeled_df %>%
-  select(`<변수1>`, `<변수2>`, `<그룹_비교_변수>`) %>%
-  tbl_summary(
-    by = `<그룹_비교_변수>`, # 예: disease_status
-    statistic = list(
-      all_continuous() ~ "{mean} ({sd})",
-      all_categorical() ~ "{n} ({p}%)"
-    )
-  ) %>%
-  add_p() %>% # p-value 추가
-  add_overall() %>% # 전체 요약 컬럼 추가
-  bold_labels()
-
-# 테이블 출력
-table1_grouped
+if(analysis_type == "regression") {
+  # 결과 변수 자동 감지 (연속형 vs 이분형)
+  outcome_vars <- data %>%
+    select(where(is.numeric)) %>%
+    names()
+  
+  binary_vars <- data %>%
+    select(where(~ is.factor(.) & n_distinct(.) == 2)) %>%
+    names()
+  
+  # 자동으로 모델 선택
+  if(length(outcome_vars) > 0) {
+    # 연속형 결과: 선형 회귀
+    outcome <- outcome_vars[1]
+    predictors <- setdiff(names(data), outcome)
+    
+    formula_str <- paste(outcome, "~", paste(predictors[1:min(5, length(predictors))], collapse = " + "))
+    model <- lm(as.formula(formula_str), data = data)
+    
+    # 결과 테이블
+    reg_table <- model %>%
+      tbl_regression() %>%
+      add_glance_table(include = c(r.squared, AIC, nobs))
+    
+  } else if(length(binary_vars) > 0) {
+    # 이분형 결과: 로지스틱 회귀
+    outcome <- binary_vars[1]
+    predictors <- setdiff(names(data), outcome)
+    
+    formula_str <- paste(outcome, "~", paste(predictors[1:min(5, length(predictors))], collapse = " + "))
+    model <- glm(as.formula(formula_str), data = data, family = binomial)
+    
+    # 결과 테이블 (Odds Ratio)
+    reg_table <- model %>%
+      tbl_regression(exponentiate = TRUE) %>%
+      add_glance_table(include = c(AIC, nobs))
+  }
+  
+  print(reg_table)
+}
 ```
 
-### 4. 추론 통계 분석 (Inferential Statistics)
-
-#### 4.1. 가설 검정 (Hypothesis Testing)
-- **T-test (두 그룹 평균 비교):** `t.test(outcome ~ group, data = df)`
-- **ANOVA (세 그룹 이상 평균 비교):** `aov(outcome ~ group, data = df)`
-- **Chi-squared Test (범주형 변수 연관성):** `chisq.test(table(df$var1, df$var2))`
-
-#### 4.2. 회귀 분석 (Regression Analysis)
-결과를 `tbl_regression`으로 감싸 바로 표로 만든다.
-
-##### 선형 회귀 (Linear Regression)
+### 5. 생존 분석 자동 수행
 ```R
-linear_model <- lm(`<연속형_결과_변수> ~ <독립_변수1> + <독립_변수2>`, data = labeled_df)
-
-# 결과 요약
-summary(linear_model)
-
-# gtsummary로 표 생성
-tbl_regression(linear_model)
+if(analysis_type == "survival") {
+  library(survival)
+  library(survminer)
+  
+  # 시간 및 이벤트 변수 자동 감지
+  time_vars <- names(data)[str_detect(names(data), "time|day|month|year")]
+  event_vars <- names(data)[str_detect(names(data), "event|status|death|recur")]
+  
+  if(length(time_vars) > 0 & length(event_vars) > 0) {
+    # Kaplan-Meier 분석
+    surv_formula <- as.formula(paste0("Surv(", time_vars[1], ", ", event_vars[1], ") ~ 1"))
+    km_fit <- survfit(surv_formula, data = data)
+    
+    # 생존 곡선 플롯
+    ggsurvplot(km_fit, 
+               data = data,
+               pval = TRUE,
+               conf.int = TRUE,
+               risk.table = TRUE,
+               title = "Kaplan-Meier Survival Curve")
+    
+    # Cox 회귀 모델
+    cox_model <- coxph(surv_formula, data = data)
+    cox_table <- tbl_regression(cox_model, exponentiate = TRUE)
+    print(cox_table)
+  }
+}
 ```
 
-##### 로지스틱 회귀 (Logistic Regression)
+### 6. 결과 저장 및 보고
 ```R
-logistic_model <- glm(`<이분형_결과_변수> ~ <독립_변수1> + <독립_변수2>`,
-                        data = labeled_df,
-                        family = "binomial")
+# PowerPoint로 결과 저장
+if(!is.null("$OUTPUT_FILE") & str_ends("$OUTPUT_FILE", ".pptx")) {
+  library(officer)
+  library(flextable)
+  
+  # PowerPoint 객체 생성
+  ppt <- read_pptx()
+  
+  # Table 1 슬라이드 추가
+  if(exists("table1")) {
+    ppt <- ppt %>%
+      add_slide(layout = "Title and Content") %>%
+      ph_with(value = "Table 1: Baseline Characteristics", location = ph_location_type(type = "title")) %>%
+      ph_with(value = as_flex_table(table1), location = ph_location_type(type = "body"))
+  }
+  
+  # 회귀 분석 결과 슬라이드
+  if(exists("reg_table")) {
+    ppt <- ppt %>%
+      add_slide(layout = "Title and Content") %>%
+      ph_with(value = "Regression Analysis Results", location = ph_location_type(type = "title")) %>%
+      ph_with(value = as_flex_table(reg_table), location = ph_location_type(type = "body"))
+  }
+  
+  print(ppt, target = "$OUTPUT_FILE")
+  cat("결과 저장 완료:", "$OUTPUT_FILE", "\n")
+}
 
-# 결과 요약
-summary(logistic_model)
-
-# gtsummary로 표 생성 (지수 변환하여 Odds Ratio 표시)
-tbl_regression(logistic_model, exponentiate = TRUE)
+# 결과 해석
+cat("\n=== 분석 완료 ===\n")
+cat("수행된 분석:", analysis_type, "\n")
+if(exists("model")) {
+  cat("p < 0.05인 유의한 변수를 확인하세요.\n")
+}
 ```
-
-## 최종 산출물 (Final Deliverable)
-- 기술 통계 테이블 (`table1_overall`, `table1_grouped`)
-- 회귀 분석 결과 테이블 (`tbl_regression` 결과)
-- 각 분석 결과에 대한 간단한 해석 (예: p-value < 0.05로 통계적으로 유의함)
