@@ -240,3 +240,302 @@ setup_claude_commands <- function() {
   message("\nClaude Code command setup complete from templates.")
   message("Usage example: /sz:preprocess --input data.csv --output clean.rds")
 }
+
+#' Create Zarathu Project Structure
+#'
+#' Creates the standard Zarathu project directory structure.
+#' @param project_name Name of the project (default: "superzarathu_example_project")
+#' @param base_dir Base directory to create the project in (default: current directory)
+#' @noRd
+create_zarathu_project_structure <- function(project_name = "superzarathu_example_project", 
+                                            base_dir = getwd()) {
+  project_path <- file.path(base_dir, project_name)
+  
+  # Check if project already exists
+  if (dir.exists(project_path)) {
+    message("Project directory '", project_name, "' already exists.")
+    return(invisible(FALSE))
+  }
+  
+  # Create main project directory
+  dir.create(project_path, recursive = TRUE)
+  message("Created project directory: ", project_path)
+  
+  # Create subdirectories
+  subdirs <- c("scripts", "R", "data")
+  for (subdir in subdirs) {
+    dir_path <- file.path(project_path, subdir)
+    dir.create(dir_path, recursive = TRUE)
+    message("  Created subdirectory: ", subdir, "/")
+  }
+  
+  # Create main Shiny app files
+  ui_content <- "# UI for Shiny application
+library(shiny)
+
+shinyUI(fluidPage(
+  titlePanel(\"Zarathu Project\"),
+  
+  sidebarLayout(
+    sidebarPanel(
+      h4(\"Controls\"),
+      # Add UI controls here
+    ),
+    
+    mainPanel(
+      h4(\"Results\"),
+      # Add output elements here
+    )
+  )
+))"
+  
+  server_content <- "# Server logic for Shiny application
+library(shiny)
+
+shinyServer(function(input, output, session) {
+  # Add server logic here
+})"
+  
+  global_content <- "# Global settings and functions
+# Load required libraries and data here
+
+library(shiny)
+library(dplyr)
+library(ggplot2)
+
+# Load data if exists
+if (file.exists(\"data/processed_data.rds\")) {
+  data <- readRDS(\"data/processed_data.rds\")
+}"
+  
+  # Write main app files
+  writeLines(ui_content, file.path(project_path, "ui.R"))
+  message("  Created file: ui.R")
+  
+  writeLines(server_content, file.path(project_path, "server.R"))
+  message("  Created file: server.R")
+  
+  writeLines(global_content, file.path(project_path, "global.R"))
+  message("  Created file: global.R")
+  
+  # Create script templates
+  preprocess_content <- "# Data preprocessing script
+# Usage: source('scripts/preprocess.R')
+
+library(dplyr)
+library(readxl)
+
+# Function to preprocess raw data
+preprocess_data <- function(input_file, output_file = \"data/processed_data.rds\") {
+  # Read data
+  if (grepl(\"\\\\.xlsx?$\", input_file)) {
+    data <- read_excel(input_file)
+  } else if (grepl(\"\\\\.csv$\", input_file)) {
+    data <- read.csv(input_file, stringsAsFactors = FALSE)
+  } else {
+    stop(\"Unsupported file format\")
+  }
+  
+  # Add preprocessing steps here
+  processed_data <- data %>%
+    # Remove missing values
+    na.omit() %>%
+    # Add more preprocessing as needed
+    mutate(processed = TRUE)
+  
+  # Save processed data
+  saveRDS(processed_data, output_file)
+  message(\"Data preprocessed and saved to: \", output_file)
+  
+  return(invisible(processed_data))
+}"
+  
+  label_content <- "# Data labeling script
+# Usage: source('scripts/label.R')
+
+library(dplyr)
+library(readxl)
+
+# Function to apply labels from codebook
+label_data <- function(data_file = \"data/processed_data.rds\", 
+                      codebook_file = \"data/code_book.xlsx\",
+                      output_file = \"data/labeled_data.rds\") {
+  # Read data
+  data <- readRDS(data_file)
+  
+  # Read codebook if exists
+  if (file.exists(codebook_file)) {
+    codebook <- read_excel(codebook_file)
+    # Apply labels based on codebook
+    # Add labeling logic here
+  }
+  
+  # Save labeled data
+  saveRDS(data, output_file)
+  message(\"Data labeled and saved to: \", output_file)
+  
+  return(invisible(data))
+}"
+  
+  visualize_content <- "# Data visualization script
+# Usage: source('scripts/visualize.R')
+
+library(ggplot2)
+library(dplyr)
+
+# Function to create visualizations
+create_visualizations <- function(data_file = \"data/labeled_data.rds\") {
+  # Read data
+  data <- readRDS(data_file)
+  
+  # Create sample visualization
+  p <- ggplot(data, aes(x = 1:nrow(data))) +
+    geom_line() +
+    theme_minimal() +
+    labs(title = \"Sample Visualization\",
+         x = \"Index\",
+         y = \"Value\")
+  
+  return(p)
+}"
+  
+  # Write script files
+  writeLines(preprocess_content, file.path(project_path, "scripts", "preprocess.R"))
+  message("  Created file: scripts/preprocess.R")
+  
+  writeLines(label_content, file.path(project_path, "scripts", "label.R"))
+  message("  Created file: scripts/label.R")
+  
+  writeLines(visualize_content, file.path(project_path, "scripts", "visualize.R"))
+  message("  Created file: scripts/visualize.R")
+  
+  # Create R directory file
+  run_script_content <- "# Helper function to run with Shiny script
+# Usage: source('R/run_with_rshiny_script.R')
+
+run_with_rshiny_script <- function(script_path) {
+  # Source the script
+  source(script_path)
+  
+  # Run Shiny app from current directory
+  shiny::runApp(getwd())
+}"
+  
+  writeLines(run_script_content, file.path(project_path, "R", "run_with_rshiny_script.R"))
+  message("  Created file: R/run_with_rshiny_script.R")
+  
+  # Create sample data files (placeholders)
+  raw_data_note <- "# Place your raw_data.xlsx file here"
+  codebook_note <- "# Place your code_book.xlsx file here (optional)"
+  
+  writeLines(raw_data_note, file.path(project_path, "data", "README.md"))
+  writeLines(codebook_note, file.path(project_path, "data", "codebook_README.md"))
+  message("  Created data directory with README files")
+  
+  message("\nZarathu project structure created successfully!")
+  message("Project location: ", project_path)
+  
+  return(invisible(TRUE))
+}
+
+#' Setup SuperZarathu Commands
+#'
+#' Unified function to set up SuperZarathu commands for AI assistants and create
+#' project structure. By default uses Claude, but can be configured for Gemini.
+#'
+#' @param ai Character string specifying which AI to setup for. Options are 
+#'   "claude" (default), "gemini", or "both".
+#' @param project_name Character string for the project directory name 
+#'   (default: "superzarathu_example_project")
+#' @param create_project Logical, whether to create the project structure 
+#'   (default: TRUE)
+#' 
+#' @details
+#' This function performs the following:
+#' 1. Creates a standard Zarathu project structure with Shiny app files and scripts
+#' 2. Sets up AI assistant commands based on the chosen AI platform
+#' 
+#' The project structure includes:
+#' - ui.R, server.R, global.R for Shiny app
+#' - scripts/ directory with preprocess.R, label.R, visualize.R
+#' - R/ directory with helper functions
+#' - data/ directory for data files
+#' 
+#' @export
+#' @examples
+#' \dontrun{
+#' # Setup for Claude (default)
+#' sz:setup()
+#' 
+#' # Setup for Gemini
+#' sz:setup(ai = "gemini")
+#' 
+#' # Setup for both Claude and Gemini
+#' sz:setup(ai = "both")
+#' 
+#' # Setup without creating project structure
+#' sz:setup(create_project = FALSE)
+#' 
+#' # Setup with custom project name
+#' sz:setup(project_name = "my_analysis_project")
+#' }
+`sz:setup` <- function(ai = "claude", 
+                       project_name = "superzarathu_example_project",
+                       create_project = TRUE) {
+  
+  # Validate ai parameter
+  ai <- tolower(ai)
+  if (!ai %in% c("claude", "gemini", "both")) {
+    stop("ai parameter must be 'claude', 'gemini', or 'both'")
+  }
+  
+  message("=== SuperZarathu Setup ===\n")
+  
+  # Step 1: Create project structure if requested
+  if (create_project) {
+    message("Step 1: Creating Zarathu project structure...")
+    created <- create_zarathu_project_structure(project_name = project_name)
+    if (!created) {
+      message("  Skipping project creation (already exists)")
+    }
+    message("")
+  } else {
+    message("Step 1: Skipping project structure creation (create_project = FALSE)\n")
+  }
+  
+  # Step 2: Setup AI commands
+  message("Step 2: Setting up AI assistant commands...")
+  
+  if (ai == "claude" || ai == "both") {
+    message("\nSetting up Claude Code commands...")
+    setup_claude_commands()
+  }
+  
+  if (ai == "gemini" || ai == "both") {
+    message("\nSetting up Gemini CLI commands...")
+    setup_gemini_commands()
+  }
+  
+  # Final message
+  message("\n=== Setup Complete ===")
+  
+  if (create_project) {
+    message("\nProject structure created in: ", file.path(getwd(), project_name))
+    message("Next steps:")
+    message("  1. Place your raw data in: ", project_name, "/data/raw_data.xlsx")
+    message("  2. (Optional) Add codebook: ", project_name, "/data/code_book.xlsx")
+    message("  3. Navigate to project: setwd('", project_name, "')")
+  }
+  
+  if (ai == "claude" || ai == "both") {
+    message("\nClaude Code commands available:")
+    message("  Example: /sz:preprocess --input data/raw_data.xlsx")
+  }
+  
+  if (ai == "gemini" || ai == "both") {
+    message("\nGemini CLI commands available:")
+    message("  Example: gemini /sz:preprocess --input data/raw_data.xlsx")
+  }
+  
+  invisible(TRUE)
+}

@@ -8,16 +8,18 @@ setup_gemini_commands()
 }
 \description{
 This function creates Gemini command TOML files in the ".gemini/commands"
-directory using hardcoded templates for data analysis workflows.
+directory using templates from the inst/templates directory.
 }
 \details{
-This function uses hardcoded templates from \code{get_templates()} to generate
+This function reads templates from the inst/templates directory and generates
 corresponding TOML files for Gemini CLI. Available templates include:
-preprocess, label, analysis, shiny, jstable, jskm, and jsmodule.
+preprocess, label, analysis, shiny, jstable, jskm, jsmodule, and plot.
+Commands support arguments using the {{args}} placeholder in Gemini CLI.
 }
 \examples{
 \dontrun{
 # This will create .toml files in the .gemini/commands/ directory
 setup_gemini_commands()
+# Usage: gemini /sz:preprocess --input data.csv --output clean.rds
 }
 }

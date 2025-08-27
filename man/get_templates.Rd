@@ -2,14 +2,15 @@
 % Please edit documentation in R/setup_commands.R
 \name{get_templates}
 \alias{get_templates}
-\title{Get Hardcoded Templates}
+\title{Get Templates from inst/templates Directory}
 \usage{
 get_templates()
 }
 \value{
-A named list where names are command names and values are template content
+A named list where names are command names and values are template info
 }
 \description{
-Returns a list of all hardcoded templates for command generation.
-Each template is a character string containing the full markdown content.
+Returns a list of all templates for command generation.
+Each template is read from markdown files in the inst/templates directory.
+Templates are enhanced with argument hints for both Claude Code and Gemini CLI.
 }

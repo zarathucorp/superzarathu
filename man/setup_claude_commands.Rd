@@ -8,17 +8,19 @@ setup_claude_commands()
 }
 \description{
 This function creates Claude Code slash command markdown files in the
-".claude/commands" directory using hardcoded templates for data analysis workflows.
+".claude/commands" directory using templates from the inst/templates directory.
 }
 \details{
-This function uses hardcoded templates from \code{get_templates()} to generate
+This function reads templates from the inst/templates directory and generates
 corresponding markdown files for Claude Code slash commands. Available templates
-include: preprocess, label, analysis, shiny, jstable, jskm, and jsmodule.
+include: preprocess, label, analysis, shiny, jstable, jskm, jsmodule, and plot.
 Claude Code slash commands use markdown format with YAML frontmatter.
+Commands support arguments using the $ARGUMENTS placeholder.
 }
 \examples{
 \dontrun{
 # This will create .md files in the .claude/commands/ directory
 setup_claude_commands()
+# Usage: /sz:preprocess --input data.csv --output clean.rds
 }
 }
