@@ -15,6 +15,7 @@
 
 - 🤖 **AI-Driven Workflows**: Templates optimized for AI assistants to understand and execute
 - 📊 **Data Processing**: Advanced preprocessing with clinical trial data support
+- 🩺 **Data Doctor**: Comprehensive data health check and diagnostics
 - 🏷️ **Smart Labeling**: Automatic variable labeling with jstable integration
 - 📈 **Statistical Analysis**: Templates for Korean medical statistics packages (jstable, jskm, jsmodule)
 - 🎨 **Visualization**: Plot generation with ggplot2 and interactive graphics
@@ -61,6 +62,11 @@ After setup, use natural language commands:
 "preprocess the data"
 "handle clinical trial data with repeated measures"
 
+# Data health check
+"diagnose my data"
+"check data health"
+"find data problems"
+
 # Data labeling  
 "label the data"
 "apply jstable labeling"
@@ -81,19 +87,17 @@ After setup, use natural language commands:
 
 ### Data Processing
 - `sz:preprocess` - Data cleaning and transformation
+- `sz:doctor` - Data health check and diagnostics
 - `sz:label` - Variable labeling and metadata management
 
 ### Statistical Analysis
 - `sz:table` - Descriptive and analytical tables
-- `sz:analysis` - Statistical tests and modeling
 
 ### Visualization
 - `sz:plot` - Static and interactive plots
-- `sz:forest` - Forest plots for meta-analysis
 
 ### Shiny Development
-- `sz:shiny` - Shiny application templates
-- `sz:dashboard` - Dashboard creation
+- `sz:rshiny` - Shiny application templates
 
 ## Template Features
 
@@ -103,6 +107,13 @@ After setup, use natural language commands:
 - 📅 Intelligent date conversion and age calculation
 - 🧹 NA handling with multiple strategies
 - 📌 pins package integration for S3/local storage
+
+### Data Health Check (Doctor)
+- 🎯 Data quality scoring (A+ to F grade)
+- 🔍 Automatic pattern detection (repeated measures, clinical trials, surveys)
+- ⚠️ Issue identification per column
+- ❓ Intelligent question generation for data producers
+- 📄 Markdown report generation with detailed diagnostics
 
 ### Smart Labeling System
 - 🏷️ jstable::mk.lev() integration
