@@ -23,7 +23,7 @@ gemini /sz:preprocess --input data.csv --output processed.rds
 gemini /sz:plot --data results.rds --type scatter --x age --y bmi
 ```
 
-## Available Commands
+## Available Commands  
 
 ### 1. `/sz:preprocess` - 데이터 전처리 및 정제 (강화됨)
 **목적:** Raw 데이터를 분석 가능한 형태로 전처리하고 데이터 품질 문제를 해결

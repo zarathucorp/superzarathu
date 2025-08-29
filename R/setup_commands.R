@@ -53,7 +53,8 @@ get_templates <- function() {
     label = "[natural language request]",
     table = "[natural language request]",
     plot = "[natural language request]",
-    rshiny = "[natural language request]"
+    rshiny = "[natural language request]",
+    doctor = "[natural language request]"
   )
 
   # Read each template file
@@ -97,7 +98,8 @@ get_argument_description <- function(template_name) {
     label = "Examples:\n- '데이터에 라벨 붙여줘'\n- '코드북 적용해서 라벨링해줘'\n- '변수명 보고 자동으로 한글 라벨 만들어줘'",
     table = "Examples:\n- '기초 특성표 만들어줘'\n- '치료군별로 특성 비교표 만들어줘'\n- '회귀분석 결과 테이블로 정리해줘'",
     plot = "Examples:\n- '생존곡선 그려줘'\n- '연령별 혈압 분포를 박스플롯으로 보여줘'\n- '변수들 간의 상관관계 히트맵 보여줘'",
-    rshiny = "Examples:\n- '데이터 분석 앱 만들어줘'\n- '의학통계 분석 앱 만들어줘'\n- '생존분석 전용 앱 만들어줘'"
+    rshiny = "Examples:\n- '데이터 분석 앱 만들어줘'\n- '의학통계 분석 앱 만들어줘'\n- '생존분석 전용 앱 만들어줘'",
+    doctor = "Examples:\n- '데이터 진단해줘'\n- '데이터 건강 체크해줘'\n- '엑셀 파일 문제점 찾아줘'"
   )
 
   return(descriptions[[template_name]] %||% "")
@@ -113,7 +115,7 @@ get_argument_description <- function(template_name) {
 #' @details
 #' This function reads templates from the inst/templates directory and generates
 #' corresponding TOML files for Gemini CLI.
-#' v2: 5 commands (preprocess, label, table, plot, rshiny)
+#' v2: 6 commands (preprocess, label, table, plot, rshiny, doctor)
 #' v1: 8 commands (preprocess, label, analysis, shiny, jstable, jskm, jsmodule, plot)
 #' Commands support arguments using the {{args}} placeholder in Gemini CLI.
 #'
@@ -170,7 +172,7 @@ setup_gemini_commands <- function() {
   create_gemini_md(gemini_root)
   
   message("\nGemini command setup complete from templates.")
-  message("5 commands available: preprocess, label, table, plot, rshiny")
+  message("6 commands available: preprocess, label, table, plot, rshiny, doctor")
   message("Common instructions: .gemini/GEMINI.md")
   message("Usage examples:")
   message("  gemini /sz:preprocess '최신 데이터 전처리해줘'")
@@ -187,7 +189,7 @@ setup_gemini_commands <- function() {
 #' @details
 #' This function reads templates from the inst/templates directory and generates
 #' corresponding markdown files for Claude Code slash commands.
-#' v2: 5 commands (preprocess, label, table, plot, rshiny)
+#' v2: 6 commands (preprocess, label, table, plot, rshiny, doctor)
 #' v1: 8 commands (preprocess, label, analysis, shiny, jstable, jskm, jsmodule, plot)
 #' Claude Code slash commands use markdown format with YAML frontmatter.
 #' Commands support arguments using the $ARGUMENTS placeholder.
@@ -251,7 +253,7 @@ setup_claude_commands <- function() {
   create_claude_md(claude_root)
   
   message("\nClaude Code command setup complete from templates.")
-  message("5 commands available: preprocess, label, table, plot, rshiny")
+  message("6 commands available: preprocess, label, table, plot, rshiny, doctor")
   message("Common instructions: .claude/CLAUDE.md")
   message("Usage examples:")
   message("  /sz:preprocess '최신 데이터 전처리해줘'")
@@ -531,7 +533,7 @@ create_zarathu_project_structure <- function(project_name = "superzarathu_exampl
 #' This function performs the following:
 #' 1. Creates a standard Zarathu project structure based on R_PROJECT_TEMPLATE.md
 #' 2. Sets up AI assistant commands based on the chosen AI platform
-#' 5 commands available: preprocess, label, table, plot, rshiny
+#' 6 commands available: preprocess, label, table, plot, rshiny, doctor
 #'
 #' The project structure follows the integrated template with:
 #' - data/ directory (raw/processed subdirectories)
@@ -634,7 +636,7 @@ sz_setup <- function(ai = "claude",
 
   if (ai == "claude" || ai == "both") {
     message("\nClaude Code commands available:")
-    message("  5 commands: /sz:preprocess, /sz:label, /sz:table, /sz:plot, /sz:rshiny")
+    message("  6 commands: /sz:preprocess, /sz:label, /sz:table, /sz:plot, /sz:rshiny, /sz:doctor")
     message("  Common instructions: .claude/CLAUDE.md")
     message("  Examples (natural language):")
     message("    /sz:preprocess '최신 데이터 전처리해줘'")
@@ -645,7 +647,7 @@ sz_setup <- function(ai = "claude",
 
   if (ai == "gemini" || ai == "both") {
     message("\nGemini CLI commands available:")
-    message("  5 commands: preprocess, label, table, plot, rshiny")
+    message("  6 commands: preprocess, label, table, plot, rshiny, doctor")
     message("  Common instructions: .gemini/GEMINI.md")
     message("  Example: gemini /sz:table '기초 특성표 만들어줘'")
   }
