@@ -1,32 +1,40 @@
 # ============================================================================
-# Basic Table Functions
+# Basic Table Functions (data.table style)
 # ============================================================================
 
+library(data.table)
+library(magrittr)
+
 #' Create summary table
-#' @param data Data frame
+#' @param data Data frame or data.table
 #' @param group_var Grouping variable (optional)
 #' @return Summary table
 create_summary_table <- function(data, group_var = NULL) {
+  if (!is.data.table(data)) {
+    data <- data.table(data)
+  }
+  
   numeric_vars <- names(data)[sapply(data, is.numeric)]
   
   if (is.null(group_var)) {
     # Overall summary
-    summary_table <- data.frame(
-      Variable = numeric_vars,
-      Mean = round(sapply(data[numeric_vars], mean, na.rm = TRUE), 2),
-      SD = round(sapply(data[numeric_vars], sd, na.rm = TRUE), 2),
-      Min = round(sapply(data[numeric_vars], min, na.rm = TRUE), 2),
-      Max = round(sapply(data[numeric_vars], max, na.rm = TRUE), 2),
-      N = sapply(data[numeric_vars], function(x) sum(!is.na(x)))
-    )
+    summary_table <- data[, .(
+      Mean = lapply(.SD, mean, na.rm = TRUE),
+      SD = lapply(.SD, sd, na.rm = TRUE),
+      Min = lapply(.SD, min, na.rm = TRUE),
+      Max = lapply(.SD, max, na.rm = TRUE),
+      N = lapply(.SD, function(x) sum(!is.na(x)))
+    ), .SDcols = numeric_vars] %>%
+      transpose(keep.names = "Variable") %>%
+      .[, lapply(.SD, unlist), by = Variable]
   } else {
     # Grouped summary
-    summary_table <- data %>%
-      group_by(!!sym(group_var)) %>%
-      summarise(across(all_of(numeric_vars), 
-                      list(mean = ~mean(., na.rm = TRUE),
-                           sd = ~sd(., na.rm = TRUE),
-                           n = ~sum(!is.na(.)))))
+    summary_table <- data[, .(
+      Mean = lapply(.SD, mean, na.rm = TRUE),
+      SD = lapply(.SD, sd, na.rm = TRUE),
+      N = lapply(.SD, function(x) sum(!is.na(x)))
+    ), by = group_var, .SDcols = numeric_vars] %>%
+      melt(id.vars = group_var, variable.factor = FALSE)
   }
   
   return(summary_table)

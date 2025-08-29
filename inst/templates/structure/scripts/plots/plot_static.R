@@ -1,7 +1,9 @@
 # ============================================================================
-# Static Plot Functions (for Reports)
+# Static Plot Functions (data.table & jsmodule compatible)
 # ============================================================================
 
+library(data.table)
+library(magrittr)
 library(ggplot2)
 library(scales)
 

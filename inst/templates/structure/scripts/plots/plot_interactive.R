@@ -1,19 +1,28 @@
 # ============================================================================
-# Interactive Plot Functions (for Shiny)
+# Interactive Plot Functions (jsmodule/jskm style for Shiny)
 # ============================================================================
 
-library(plotly)
+library(data.table)
+library(magrittr)
 library(ggplot2)
+library(plotly)
+library(jskm)
+library(jsmodule)
 
-#' Create interactive scatter plot
-#' @param data Data frame
+#' Create interactive scatter plot (jsmodule compatible)
+#' @param data Data.table or data frame
 #' @param x_var X variable name
 #' @param y_var Y variable name
 #' @param color_var Color variable (optional)
 #' @param title Plot title
-#' @return Plotly object
+#' @return Plotly object for jsmodule
 create_interactive_scatter <- function(data, x_var, y_var, color_var = NULL, title = "") {
-  p <- plot_ly(data, x = ~get(x_var), y = ~get(y_var), type = 'scatter', mode = 'markers')
+  if (!is.data.table(data)) {
+    data <- data.table(data)
+  }
+  
+  p <- plot_ly(data, x = ~get(x_var), y = ~get(y_var), 
+               type = 'scatter', mode = 'markers')
   
   if (!is.null(color_var)) {
     p <- p %>% add_trace(color = ~get(color_var))

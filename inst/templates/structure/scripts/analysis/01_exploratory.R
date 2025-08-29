@@ -1,43 +1,55 @@
 # ============================================================================
-# Exploratory Data Analysis Functions
+# Exploratory Data Analysis Functions (data.table style)
 # ============================================================================
 
+library(data.table)
+library(magrittr)
+
 #' Perform exploratory data analysis
-#' @param data Data frame to analyze
+#' @param data Data frame or data.table to analyze
 #' @return List with summary statistics
 perform_eda <- function(data) {
+  # Convert to data.table if needed
+  if (!is.data.table(data)) {
+    data <- data.table(data)
+  }
+  
   results <- list()
   
   # Basic statistics
   results$summary <- summary(data)
   
   # Missing value analysis
-  results$missing <- colSums(is.na(data))
+  results$missing <- data[, lapply(.SD, function(x) sum(is.na(x)))] %>% unlist
   results$missing_pct <- round(results$missing / nrow(data) * 100, 2)
   
   # Data types
-  results$types <- sapply(data, class)
+  results$types <- data[, lapply(.SD, class)] %>% sapply(function(x) x[1])
   
   # Unique values
-  results$unique <- sapply(data, function(x) length(unique(x)))
+  results$unique <- data[, lapply(.SD, uniqueN)] %>% unlist
   
   # Numeric variable statistics
   numeric_vars <- names(data)[sapply(data, is.numeric)]
   if (length(numeric_vars) > 0) {
-    results$numeric_stats <- data.frame(
-      variable = numeric_vars,
-      mean = sapply(data[numeric_vars], mean, na.rm = TRUE),
-      sd = sapply(data[numeric_vars], sd, na.rm = TRUE),
-      min = sapply(data[numeric_vars], min, na.rm = TRUE),
-      max = sapply(data[numeric_vars], max, na.rm = TRUE),
-      median = sapply(data[numeric_vars], median, na.rm = TRUE)
-    )
+    results$numeric_stats <- data[, .(
+      mean = lapply(.SD, mean, na.rm = TRUE),
+      sd = lapply(.SD, sd, na.rm = TRUE),
+      min = lapply(.SD, min, na.rm = TRUE),
+      max = lapply(.SD, max, na.rm = TRUE),
+      median = lapply(.SD, median, na.rm = TRUE)
+    ), .SDcols = numeric_vars] %>%
+      transpose(keep.names = "variable") %>%
+      .[, lapply(.SD, unlist), by = variable]
   }
   
   # Categorical variable frequencies
   categorical_vars <- names(data)[sapply(data, function(x) is.factor(x) || is.character(x))]
   if (length(categorical_vars) > 0) {
-    results$categorical_freq <- lapply(data[categorical_vars], table)
+    results$categorical_freq <- lapply(categorical_vars, function(v) {
+      data[, .N, by = v]
+    })
+    names(results$categorical_freq) <- categorical_vars
   }
   
   return(results)

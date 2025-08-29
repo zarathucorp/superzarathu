@@ -1,20 +1,27 @@
 # ============================================================================
-# Modeling Functions
+# Modeling Functions (data.table & jstable/jsmodule compatible)
 # ============================================================================
 
+library(data.table)
+library(magrittr)
+
 #' Split data into training and test sets
-#' @param data Data frame
+#' @param data Data frame or data.table
 #' @param train_prop Proportion for training set
 #' @param seed Random seed
 #' @return List with train and test sets
 split_data <- function(data, train_prop = 0.8, seed = 123) {
+  if (!is.data.table(data)) {
+    data <- data.table(data)
+  }
+  
   set.seed(seed)
   n <- nrow(data)
   train_idx <- sample(1:n, size = floor(train_prop * n))
   
   list(
-    train = data[train_idx, ],
-    test = data[-train_idx, ]
+    train = data[train_idx],
+    test = data[-train_idx]
   )
 }
 

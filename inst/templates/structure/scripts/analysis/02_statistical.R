@@ -1,19 +1,28 @@
 # ============================================================================
-# Statistical Analysis Functions
+# Statistical Analysis Functions (data.table & jstable style)
 # ============================================================================
 
+library(data.table)
+library(magrittr)
+library(jstable)
+
 #' Perform correlation analysis
-#' @param data Data frame with numeric variables
+#' @param data Data frame or data.table with numeric variables
 #' @param method Correlation method (pearson, spearman, kendall)
 #' @return Correlation matrix
 correlation_analysis <- function(data, method = "pearson") {
-  numeric_data <- data[sapply(data, is.numeric)]
+  if (!is.data.table(data)) {
+    data <- data.table(data)
+  }
   
-  if (ncol(numeric_data) < 2) {
+  numeric_vars <- names(data)[sapply(data, is.numeric)]
+  
+  if (length(numeric_vars) < 2) {
     warning("Not enough numeric variables for correlation analysis")
     return(NULL)
   }
   
+  numeric_data <- data[, .SD, .SDcols = numeric_vars]
   cor_matrix <- cor(numeric_data, use = "complete.obs", method = method)
   return(cor_matrix)
 }
