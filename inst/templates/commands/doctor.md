@@ -75,10 +75,22 @@ calculate_health_score <- function(data) {
 }
 ```
 
-### 3. 컬럼별 상세 분석
+### 3. 컬럼별 상세 분석 (Excel 컬럼 매핑 포함)
 ```r
-analyze_columns <- function(data) {
+# Excel 열 이름 생성 함수 (A, B, C, ... Z, AA, AB, ...)
+get_excel_column_name <- function(n) {
+  if(n <= 26) {
+    return(LETTERS[n])
+  } else {
+    first_letter <- LETTERS[((n - 1) %/% 26)]
+    second_letter <- LETTERS[((n - 1) %% 26) + 1]
+    return(paste0(first_letter, second_letter))
+  }
+}
+
+analyze_columns <- function(data, original_headers = NULL) {
   col_analysis <- data.frame(
+    Excel_Col = sapply(1:ncol(data), get_excel_column_name),
     Column = names(data),
     Type_Inferred = sapply(data, function(x) {
       if(all(is.na(x))) return("Unknown")
@@ -104,6 +116,11 @@ analyze_columns <- function(data) {
   # 문제점 찾기
   col_analysis$Issues <- apply(col_analysis, 1, function(row) {
     issues <- c()
+    
+    # X1, X2 형태의 자동 생성된 컬럼명 확인
+    if(grepl("^X\\d+$", row["Column"])) {
+      issues <- c(issues, "📝 자동 생성된 컬럼명")
+    }
     
     # 높은 결측치
     if(as.numeric(row["Missing_Pct"]) > 50) {
@@ -139,6 +156,60 @@ analyze_columns <- function(data) {
   })
   
   return(col_analysis)
+}
+
+# Excel 파일의 복잡한 헤더 분석
+analyze_excel_headers <- function(file_path) {
+  header_info <- list()
+  
+  # Excel 파일인 경우만 처리
+  if(grepl("\\.xlsx?$", file_path)) {
+    # 첫 10행을 읽어서 헤더 구조 파악
+    tryCatch({
+      # 헤더 없이 읽기
+      raw_data <- openxlsx::read.xlsx(file_path, colNames = FALSE, rows = 1:10)
+      
+      # 병합된 셀 정보 가져오기 (openxlsx2 사용 시)
+      if(requireNamespace("openxlsx2", quietly = TRUE)) {
+        wb <- openxlsx2::wb_load(file_path)
+        merged_cells <- openxlsx2::wb_get_merged_cells(wb, sheet = 1)
+        header_info$merged_cells <- merged_cells
+      }
+      
+      # 실제 데이터가 시작되는 행 찾기
+      data_start_row <- 1
+      for(i in 1:nrow(raw_data)) {
+        non_na_count <- sum(!is.na(raw_data[i,]))
+        if(non_na_count > ncol(raw_data) * 0.5) {  # 50% 이상 값이 있으면
+          # 다음 행도 체크
+          if(i < nrow(raw_data)) {
+            next_non_na <- sum(!is.na(raw_data[i+1,]))
+            if(next_non_na > ncol(raw_data) * 0.5) {
+              data_start_row <- i
+              break
+            }
+          }
+        }
+      }
+      
+      header_info$data_start_row <- data_start_row
+      header_info$potential_headers <- raw_data[1:(data_start_row-1), ]
+      
+      # 컬럼명 자동 생성 여부 확인
+      if(data_start_row > 1) {
+        header_info$has_header <- TRUE
+        header_info$header_rows <- data_start_row - 1
+      } else {
+        header_info$has_header <- FALSE
+        header_info$header_rows <- 0
+      }
+      
+    }, error = function(e) {
+      header_info$error <- e$message
+    })
+  }
+  
+  return(header_info)
 }
 ```
 
@@ -324,11 +395,29 @@ print_doctor_report <- function(file_info, health_score, col_analysis, patterns,
   if(nrow(problem_cols) > 0) {
     cat(bold(red("⚠️ 주의가 필요한 컬럼\n")))
     for(i in 1:min(5, nrow(problem_cols))) {
-      cat(sprintf("  • %s: %s\n", 
-                  problem_cols$Column[i], 
+      cat(sprintf("  • %s (Excel 열 %s): %s\n", 
+                  problem_cols$Column[i],
+                  problem_cols$Excel_Col[i], 
                   problem_cols$Issues[i]))
     }
     cat("\n")
+    
+    # X1, X2 형태의 컬럼이 많은 경우 Excel 헤더 확인 권고
+    auto_cols <- sum(grepl("^X\\d+$", col_analysis$Column))
+    if(auto_cols > ncol(col_analysis) * 0.3) {
+      cat(bold(yellow("📋 Excel 헤더 확인 필요\n")))
+      cat("  많은 컬럼이 X1, X2... 형태로 자동 명명되었습니다.\n")
+      cat("  Excel 파일의 헤더가 병합되었거나 여러 행에 걸쳐 있을 수 있습니다.\n")
+      cat("  Excel에서 직접 확인하시기 바랍니다:\n")
+      for(i in 1:min(10, nrow(col_analysis))) {
+        if(grepl("^X\\d+$", col_analysis$Column[i])) {
+          cat(sprintf("    - 열 %s → %s\n", 
+                      col_analysis$Excel_Col[i],
+                      col_analysis$Column[i]))
+        }
+      }
+      cat("\n")
+    }
   }
   
   # 4. 데이터 패턴
@@ -402,16 +491,42 @@ generate_markdown_report <- function(file_info, health_score, col_analysis, patt
   if(nrow(problem_cols) > 0) {
     report <- c(report, "### ⚠️ 주의가 필요한 컬럼")
     report <- c(report, "")
-    report <- c(report, "| 컬럼명 | 추정 타입 | 결측률 | 고유값 | 발견된 문제 |")
-    report <- c(report, "|--------|-----------|--------|--------|-------------|")
+    report <- c(report, "| Excel 열 | 컬럼명 | 추정 타입 | 결측률 | 고유값 | 발견된 문제 |")
+    report <- c(report, "|----------|--------|-----------|--------|--------|-------------|")
     
     for(i in 1:nrow(problem_cols)) {
-      report <- c(report, sprintf("| %s | %s | %s%% | %d | %s |",
+      report <- c(report, sprintf("| %s | %s | %s | %s%% | %d | %s |",
+                                  problem_cols$Excel_Col[i],
                                   problem_cols$Column[i],
                                   problem_cols$Type_Inferred[i],
                                   problem_cols$Missing_Pct[i],
                                   problem_cols$Unique_Values[i],
                                   problem_cols$Issues[i]))
+    }
+    report <- c(report, "")
+  }
+  
+  # X1, X2 형태의 컬럼이 많은 경우 Excel 매핑 테이블 추가
+  auto_cols <- col_analysis[grepl("^X\\d+$", col_analysis$Column), ]
+  if(nrow(auto_cols) > ncol(col_analysis) * 0.3) {
+    report <- c(report, "### 📋 Excel 컬럼 매핑")
+    report <- c(report, "")
+    report <- c(report, "Excel 파일의 헤더가 제대로 인식되지 않아 자동으로 컬럼명이 생성되었습니다.")
+    report <- c(report, "아래 표를 참고하여 Excel 파일에서 각 열의 실제 의미를 확인하세요:")
+    report <- c(report, "")
+    report <- c(report, "| Excel 열 | 자동 생성 컬럼명 | 데이터 타입 | 샘플 값 |")
+    report <- c(report, "|----------|------------------|-------------|---------|")
+    
+    for(i in 1:min(20, nrow(auto_cols))) {
+      col_name <- auto_cols$Column[i]
+      sample_val <- head(na.omit(data[[col_name]]), 1)
+      if(length(sample_val) == 0) sample_val <- "NA"
+      
+      report <- c(report, sprintf("| %s | %s | %s | %s |",
+                                  auto_cols$Excel_Col[i],
+                                  auto_cols$Column[i],
+                                  auto_cols$Type_Inferred[i],
+                                  as.character(sample_val)))
     }
     report <- c(report, "")
   }

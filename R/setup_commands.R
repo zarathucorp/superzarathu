@@ -170,7 +170,7 @@ setup_gemini_commands <- function() {
 
   # 4. Create GEMINI.md with common instructions
   create_gemini_md(gemini_root)
-  
+
   message("\nGemini command setup complete from templates.")
   message("6 commands available: preprocess, label, table, plot, rshiny, doctor")
   message("Common instructions: .gemini/GEMINI.md")
@@ -251,7 +251,7 @@ setup_claude_commands <- function() {
 
   # 4. Create CLAUDE.md with common instructions
   create_claude_md(claude_root)
-  
+
   message("\nClaude Code command setup complete from templates.")
   message("6 commands available: preprocess, label, table, plot, rshiny, doctor")
   message("Common instructions: .claude/CLAUDE.md")
@@ -268,7 +268,7 @@ setup_claude_commands <- function() {
 create_claude_md <- function(claude_root) {
   # Get common instructions template
   template_path <- system.file("templates", "COMMON_INSTRUCTIONS.md", package = "superzarathu")
-  
+
   # If running in development mode, use local path
   if (template_path == "") {
     pkg_dir <- "/Users/zarathu/projects/superzarathu"
@@ -278,22 +278,22 @@ create_claude_md <- function(claude_root) {
       template_path <- file.path("inst", "templates", "COMMON_INSTRUCTIONS.md")
     }
   }
-  
+
   if (!file.exists(template_path)) {
     warning("Common instructions template not found")
     return()
   }
-  
+
   # Read template
   content <- paste(readLines(template_path, encoding = "UTF-8"), collapse = "\n")
-  
+
   # Add Claude-specific header
   claude_content <- paste0(
     "# CLAUDE.md\n\n",
     "이 파일은 Claude Code (claude.ai/code)가 이 프로젝트에서 작업할 때 참고하는 지시사항입니다.\n\n",
     content
   )
-  
+
   # Write CLAUDE.md
   claude_md_path <- file.path(claude_root, "CLAUDE.md")
   writeLines(claude_content, claude_md_path)
@@ -308,7 +308,7 @@ create_claude_md <- function(claude_root) {
 create_gemini_md <- function(gemini_root) {
   # Get common instructions template
   template_path <- system.file("templates", "COMMON_INSTRUCTIONS.md", package = "superzarathu")
-  
+
   # If running in development mode, use local path
   if (template_path == "") {
     pkg_dir <- "/Users/zarathu/projects/superzarathu"
@@ -318,22 +318,22 @@ create_gemini_md <- function(gemini_root) {
       template_path <- file.path("inst", "templates", "COMMON_INSTRUCTIONS.md")
     }
   }
-  
+
   if (!file.exists(template_path)) {
     warning("Common instructions template not found")
     return()
   }
-  
+
   # Read template
   content <- paste(readLines(template_path, encoding = "UTF-8"), collapse = "\n")
-  
+
   # Add Gemini-specific header
   gemini_content <- paste0(
     "# GEMINI.md\n\n",
     "이 파일은 Gemini CLI가 이 프로젝트에서 작업할 때 참고하는 지시사항입니다.\n\n",
     content
   )
-  
+
   # Write GEMINI.md
   gemini_md_path <- file.path(gemini_root, "GEMINI.md")
   writeLines(gemini_content, gemini_md_path)
@@ -473,9 +473,9 @@ create_zarathu_project_structure <- function(project_name = "superzarathu_exampl
       readme_content,
       "### Running Shiny App\n",
       "```r\n",
-      'shiny::runApp()\n',
+      "shiny::runApp()\n",
       "# Or with options:\n",
-      'shiny::runApp(port = 3838, launch.browser = TRUE)\n',
+      "shiny::runApp(port = 3838, launch.browser = TRUE)\n",
       "```\n\n"
     )
   }
