@@ -90,14 +90,14 @@ After setup, use natural language commands:
 - `sz:doctor` - Data health check and diagnostics
 - `sz:label` - Variable labeling and metadata management
 
-### Statistical Analysis
-- `sz:table` - Descriptive and analytical tables
+### Statistical Analysis  
+- `sz:table` - Descriptive and analytical tables with jstable
 
 ### Visualization
-- `sz:plot` - Static and interactive plots
+- `sz:plot` - Static and interactive plots with ggplot2 and jskm
 
 ### Shiny Development
-- `sz:rshiny` - Shiny application templates
+- `sz:rshiny` - Shiny application templates with jsmodule
 
 ## Template Features
 

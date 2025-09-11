@@ -94,12 +94,12 @@ get_templates <- function() {
 get_argument_description <- function(template_name) {
   # Simplified descriptions - focus on natural language
   descriptions <- list(
-    preprocess = "Examples:\n- '최신 데이터 전처리해줘'\n- 'survey_2024.csv 파일 정제해줘'\n- 'raw 폴더의 모든 CSV 파일 처리해줘'",
-    label = "Examples:\n- '데이터에 라벨 붙여줘'\n- '코드북 적용해서 라벨링해줘'\n- '변수명 보고 자동으로 한글 라벨 만들어줘'",
-    table = "Examples:\n- '기초 특성표 만들어줘'\n- '치료군별로 특성 비교표 만들어줘'\n- '회귀분석 결과 테이블로 정리해줘'",
-    plot = "Examples:\n- '생존곡선 그려줘'\n- '연령별 혈압 분포를 박스플롯으로 보여줘'\n- '변수들 간의 상관관계 히트맵 보여줘'",
-    rshiny = "Examples:\n- '데이터 분석 앱 만들어줘'\n- '의학통계 분석 앱 만들어줘'\n- '생존분석 전용 앱 만들어줘'",
-    doctor = "Examples:\n- '데이터 진단해줘'\n- '데이터 건강 체크해줘'\n- '엑셀 파일 문제점 찾아줘'"
+    preprocess = "Examples:\n- 'preprocess latest data'\n- 'clean survey_2024.csv file'\n- 'process all CSV files in raw folder'",
+    label = "Examples:\n- 'add labels to data'\n- 'apply codebook for labeling'\n- 'create Korean labels based on variable names'",
+    table = "Examples:\n- 'create basic characteristics table'\n- 'create comparison table by treatment group'\n- 'organize regression analysis results into table'",
+    plot = "Examples:\n- 'draw survival curve'\n- 'show age-blood pressure distribution as boxplot'\n- 'show correlation heatmap between variables'",
+    rshiny = "Examples:\n- 'create data analysis app'\n- 'create medical statistics analysis app'\n- 'create survival analysis app'",
+    doctor = "Examples:\n- 'diagnose data'\n- 'check data health'\n- 'find problems in Excel file'"
   )
 
   return(descriptions[[template_name]] %||% "")
@@ -147,13 +147,19 @@ setup_gemini_commands <- function() {
     # Convert placeholders for Gemini
     prompt_content <- convert_placeholder(template_info$content, "gemini")
 
+    # Extract the argument hint
+    argument_hint <- ifelse(is.null(template_info$argument_hint),
+      "[options]",
+      template_info$argument_hint
+    )
+
     # Extract description from the first line
     first_line <- strsplit(prompt_content, "\n")[[1]][1]
     description <- gsub("# LLM.*: ", "", first_line)
 
-    # Construct TOML content
+    # Construct TOML content for Gemini CLI
     toml_content <- sprintf(
-      'name = "%s"\ndescription = "%s"\nprompt = """\n%s\n"""',
+      "[command]\nname = \"sz:%s\"\ndescription = \"%s\"\n\n[command.prompt]\ntext = \"\"\"%s\"\"\"\n",
       command_name,
       description,
       prompt_content
@@ -165,18 +171,18 @@ setup_gemini_commands <- function() {
     writeLines(toml_content, con)
     close(con)
 
-    message("Created command file: ", toml_file_path)
+    message("Created Gemini CLI command file: ", toml_file_path)
   }
 
   # 4. Create GEMINI.md with common instructions
   create_gemini_md(gemini_root)
 
-  message("\nGemini command setup complete from templates.")
+  message("\nGemini CLI command setup complete from templates.")
   message("6 commands available: preprocess, label, table, plot, rshiny, doctor")
   message("Common instructions: .gemini/GEMINI.md")
   message("Usage examples:")
-  message("  gemini /sz:preprocess '최신 데이터 전처리해줘'")
-  message("  gemini /sz:table '기초 특성표 만들어줘'")
+  message("  gemini /sz:preprocess 'preprocess latest data'")
+  message("  gemini /sz:table 'create basic characteristics table'")
 }
 
 #' Setup Custom Claude Code Commands from Template Files
@@ -256,8 +262,8 @@ setup_claude_commands <- function() {
   message("6 commands available: preprocess, label, table, plot, rshiny, doctor")
   message("Common instructions: .claude/CLAUDE.md")
   message("Usage examples:")
-  message("  /sz:preprocess '최신 데이터 전처리해줘'")
-  message("  /sz:table '기초 특성표 만들어줘'")
+  message("  /sz:preprocess 'preprocess latest data'")
+  message("  /sz:table 'create basic characteristics table'")
 }
 
 #' Create CLAUDE.md for Claude Code
@@ -290,7 +296,7 @@ create_claude_md <- function(claude_root) {
   # Add Claude-specific header
   claude_content <- paste0(
     "# CLAUDE.md\n\n",
-    "이 파일은 Claude Code (claude.ai/code)가 이 프로젝트에서 작업할 때 참고하는 지시사항입니다.\n\n",
+    "This file contains instructions for Claude Code (claude.ai/code) when working on this project.\n\n",
     content
   )
 
@@ -326,11 +332,14 @@ create_gemini_md <- function(gemini_root) {
 
   # Read template
   content <- paste(readLines(template_path, encoding = "UTF-8"), collapse = "\n")
+  
+  # Replace Claude paths with Gemini paths for documentation
+  content <- gsub("\\.claude/docs/", ".gemini/docs/", content)
 
   # Add Gemini-specific header
   gemini_content <- paste0(
     "# GEMINI.md\n\n",
-    "이 파일은 Gemini CLI가 이 프로젝트에서 작업할 때 참고하는 지시사항입니다.\n\n",
+    "This file contains instructions for Gemini CLI when working on this project.\n\n",
     content
   )
 
@@ -615,6 +624,10 @@ sz_setup <- function(ai = "claude",
     setup_gemini_commands()
   }
 
+  # Step 3: Setup JS documentation
+  message("\nStep 3: Setting up JS documentation...")
+  setup_js_document(ai = ai)
+
   # Final message
   message("\n=== Setup Complete ===")
 
@@ -635,22 +648,175 @@ sz_setup <- function(ai = "claude",
   }
 
   if (ai == "claude" || ai == "both") {
-    message("\nClaude Code commands available:")
+    message("\nClaude Code setup complete:")
     message("  6 commands: /sz:preprocess, /sz:label, /sz:table, /sz:plot, /sz:rshiny, /sz:doctor")
     message("  Common instructions: .claude/CLAUDE.md")
+    message("  Documentation: .claude/docs/")
     message("  Examples (natural language):")
-    message("    /sz:preprocess '최신 데이터 전처리해줘'")
-    message("    /sz:table '치료군별 기초 특성표 만들어줘'")
-    message("    /sz:plot '생존곡선 그려줘'")
-    message("    /sz:rshiny '데이터 분석 앱 만들어줘'")
+    message("    /sz:preprocess 'preprocess latest data'")
+    message("    /sz:table 'create treatment group characteristics table'")
+    message("    /sz:plot 'draw survival curve'")
+    message("    /sz:rshiny 'create data analysis app'")
   }
 
   if (ai == "gemini" || ai == "both") {
-    message("\nGemini CLI commands available:")
-    message("  6 commands: preprocess, label, table, plot, rshiny, doctor")
+    message("\nGemini CLI setup complete:")
+    message("  6 commands: /sz:preprocess, /sz:label, /sz:table, /sz:plot, /sz:rshiny, /sz:doctor")
     message("  Common instructions: .gemini/GEMINI.md")
-    message("  Example: gemini /sz:table '기초 특성표 만들어줘'")
+    message("  Documentation: .gemini/docs/")
+    message("  Examples (natural language):")
+    message("    gemini /sz:preprocess 'preprocess latest data'")
+    message("    gemini /sz:table 'create basic characteristics table'")
   }
 
   invisible(TRUE)
+}
+
+#' Setup JS Documentation
+#'
+#' Copies jstable, jskm, jsmodule package documentation to project directories
+#' for easy access by AI assistants (Claude Code and Gemini CLI).
+#'
+#' @param ai Character vector of AI systems to setup for ("claude", "gemini", or "both", default: "both")
+#' @param project_dir Project directory path (default: current working directory)
+#'
+#' @details
+#' This function copies comprehensive documentation for jstable, jskm, and jsmodule packages
+#' from the package inst/docs directory to the appropriate AI directories:
+#' - For Claude: copies to .claude/docs/
+#' - For Gemini: copies to .gemini/docs/
+#'
+#' All three packages (jstable, jskm, jsmodule) are always included.
+#' Note: JS refers to jstable/jskm/jsmodule packages (not JavaScript).
+#'
+#' @export
+#' @examples
+#' \dontrun{
+#' # Setup documentation for both Claude and Gemini
+#' setup_js_document()
+#'
+#' # Setup only for Claude Code
+#' setup_js_document(ai = "claude")
+#'
+#' # Setup only for Gemini CLI
+#' setup_js_document(ai = "gemini")
+#'
+#' # Setup for specific directory
+#' setup_js_document(project_dir = "/path/to/project")
+#' }
+setup_js_document <- function(ai = "both",
+                              project_dir = getwd()) {
+
+  # Fixed packages - always include all three
+  packages <- c("jstable", "jskm", "jsmodule")
+  
+  # Validate ai parameter
+  ai <- tolower(ai)
+  if (!ai %in% c("claude", "gemini", "both")) {
+    stop("ai parameter must be 'claude', 'gemini', or 'both'")
+  }
+
+  message("=== JS Documentation Setup ===\n")
+  message("Packages: ", paste(packages, collapse = ", "))
+  message("AI systems: ", ai)
+  message("(JS = jstable, jskm, jsmodule packages)")
+  message("")
+  
+  # Get documentation source directory
+  docs_source_dir <- system.file("docs", package = "superzarathu")
+
+  # If running in development mode, use local path
+  if (docs_source_dir == "") {
+    pkg_dir <- "/Users/zarathu/projects/superzarathu"
+    if (dir.exists(pkg_dir)) {
+      docs_source_dir <- file.path(pkg_dir, "inst", "docs")
+    } else {
+      docs_source_dir <- file.path("inst", "docs")
+    }
+  }
+
+  if (!dir.exists(docs_source_dir)) {
+    stop("Documentation source directory not found: ", docs_source_dir)
+  }
+
+  # Setup documentation for Claude Code if requested
+  if (ai == "claude" || ai == "both") {
+    claude_docs_dir <- file.path(project_dir, ".claude", "docs")
+    
+    # Create .claude/docs directory if it doesn't exist
+    if (!dir.exists(claude_docs_dir)) {
+      dir.create(claude_docs_dir, recursive = TRUE)
+      message("Created directory: ", claude_docs_dir)
+    }
+    
+    # Remove existing documentation and copy fresh
+    if (dir.exists(claude_docs_dir)) {
+      unlink(file.path(claude_docs_dir, "*"), recursive = TRUE)
+    }
+    
+    # Copy documentation to .claude/docs directory
+    file.copy(file.path(docs_source_dir, "."), claude_docs_dir, recursive = TRUE)
+    message("Copied documentation to: ", claude_docs_dir)
+  }
+  
+  # Setup documentation for Gemini CLI if requested
+  if (ai == "gemini" || ai == "both") {
+    gemini_docs_dir <- file.path(project_dir, ".gemini", "docs")
+    
+    # Create .gemini/docs directory if it doesn't exist
+    if (!dir.exists(gemini_docs_dir)) {
+      dir.create(gemini_docs_dir, recursive = TRUE)
+      message("Created directory: ", gemini_docs_dir)
+    }
+    
+    # Remove existing documentation and copy fresh
+    if (dir.exists(gemini_docs_dir)) {
+      unlink(file.path(gemini_docs_dir, "*"), recursive = TRUE)
+    }
+    
+    # Copy documentation to .gemini/docs directory
+    file.copy(file.path(docs_source_dir, "."), gemini_docs_dir, recursive = TRUE)
+    message("Copied documentation to: ", gemini_docs_dir)
+  }
+
+  # Final messages
+  message("\n=== Documentation Setup Complete ===")
+  message("Packages: ", paste(packages, collapse = ", "))
+  
+  if (ai == "claude" || ai == "both") {
+    claude_docs_dir <- file.path(project_dir, ".claude", "docs")
+    message("Claude documentation: ", claude_docs_dir)
+    message("Total files for Claude: ", count_documentation_files(claude_docs_dir, packages))
+  }
+  
+  if (ai == "gemini" || ai == "both") {
+    gemini_docs_dir <- file.path(project_dir, ".gemini", "docs")
+    message("Gemini documentation: ", gemini_docs_dir)
+    message("Total files for Gemini: ", count_documentation_files(gemini_docs_dir, packages))
+  }
+  
+  message("\nUsage: Access JS package documentation from the respective AI directories")
+  message("Note: JS = jstable, jskm, jsmodule (not JavaScript)")
+
+  invisible(TRUE)
+}
+
+
+#' Count Documentation Files
+#'
+#' Count total number of documentation files for specified packages
+#' @param docs_source_dir Documentation source directory
+#' @param packages Packages to count
+#' @noRd
+count_documentation_files <- function(docs_source_dir, packages) {
+  total_files <- 0
+  for (package in packages) {
+    package_dir <- file.path(docs_source_dir, package)
+    if (dir.exists(package_dir)) {
+      total_files <- total_files + length(list.files(package_dir,
+        pattern = "\\.md$"
+      ))
+    }
+  }
+  total_files
 }

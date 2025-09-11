@@ -91,13 +91,13 @@ sz_setup("gemini")
 - `sz:label` - 변수 라벨링 및 메타데이터 관리
 
 ### 통계 분석
-- `sz:table` - 기술통계 및 분석 테이블
+- `sz:table` - jstable을 사용한 기술통계 및 분석 테이블
 
 ### 시각화
-- `sz:plot` - 정적 및 인터랙티브 플롯
+- `sz:plot` - ggplot2와 jskm을 사용한 정적 및 인터랙티브 플롯
 
 ### Shiny 개발
-- `sz:rshiny` - Shiny 애플리케이션 템플릿
+- `sz:rshiny` - jsmodule을 사용한 Shiny 애플리케이션 템플릿
 
 ## 템플릿 특징
 

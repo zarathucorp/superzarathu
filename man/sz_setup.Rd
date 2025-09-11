@@ -7,18 +7,21 @@
 sz_setup(
   ai = "claude",
   project_name = "superzarathu_example_project",
-  create_project = TRUE
+  create_project = TRUE,
+  type = "both"
 )
 }
 \arguments{
-\item{ai}{Character string specifying which AI to setup for. Options are 
+\item{ai}{Character string specifying which AI to setup for. Options are
 "claude" (default), "gemini", or "both".}
 
-\item{project_name}{Character string for the project directory name 
+\item{project_name}{Character string for the project directory name
 (default: "superzarathu_example_project")}
 
-\item{create_project}{Logical, whether to create the project structure 
+\item{create_project}{Logical, whether to create the project structure
 (default: TRUE)}
+
+\item{type}{Project type: "analysis", "shiny", or "both" (default: "both")}
 }
 \description{
 Unified function to set up SuperZarathu commands for AI assistants and create
@@ -26,19 +29,27 @@ project structure. By default uses Claude, but can be configured for Gemini.
 }
 \details{
 This function performs the following:
-1. Creates a standard Zarathu project structure with Shiny app files and scripts
+1. Creates a standard Zarathu project structure based on R_PROJECT_TEMPLATE.md
 2. Sets up AI assistant commands based on the chosen AI platform
+6 commands available: preprocess, label, table, plot, rshiny, doctor
 
-The project structure includes:
-- ui.R, server.R, global.R for Shiny app
-- scripts/ directory with preprocess.R, label.R, visualize.R
-- R/ directory with helper functions
-- data/ directory for data files
+The project structure follows the integrated template with:
+- data/ directory (raw/processed subdirectories)
+- scripts/ directory (utils/analysis/plots/tables subdirectories)
+- shiny/ directory (optional, with modules)
+- output/ directory (plots/tables/reports subdirectories)
+- docs/ directory for documentation
 }
 \examples{
 \dontrun{
-# Setup for Claude (default)
+# Setup with default settings
 sz_setup()
+
+# Setup for analysis project only
+sz_setup(type = "analysis")
+
+# Setup for Shiny project only
+sz_setup(type = "shiny")
 
 # Setup for Gemini
 sz_setup(ai = "gemini")

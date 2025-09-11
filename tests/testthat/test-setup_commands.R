@@ -18,15 +18,15 @@ test_that("setup_gemini_commands creates directory", {
   # Check that TOML files are created
   toml_files <- list.files(".gemini/commands", pattern = "\\.toml$")
   expected_files <- c(
-    "sz:analysis.toml", "sz:jskm.toml", "sz:jsmodule.toml", "sz:jstable.toml",
-    "sz:label.toml", "sz:plot.toml", "sz:preprocess.toml", "sz:shiny.toml"
+    "sz:doctor.toml", "sz:label.toml", "sz:plot.toml",
+    "sz:preprocess.toml", "sz:rshiny.toml", "sz:table.toml"
   )
   expect_equal(sort(toml_files), sort(expected_files))
 
   # Check TOML file content
   preprocess_content <- readLines(".gemini/commands/sz:preprocess.toml")
-  expect_true(any(grepl("name = \"preprocess\"", preprocess_content)))
-  expect_true(any(grepl("prompt = \"\"\"", preprocess_content)))
+  expect_true(any(grepl("name = \"sz:preprocess\"", preprocess_content)))
+  expect_true(any(grepl("text = \"\"\"", preprocess_content)))
 
   # Clean up
   unlink(".gemini", recursive = TRUE)
@@ -53,8 +53,8 @@ test_that("setup_claude_commands creates directory", {
   # Check that markdown files are created
   md_files <- list.files(".claude/commands", pattern = "\\.md$")
   expected_files <- c(
-    "sz:analysis.md", "sz:jskm.md", "sz:jsmodule.md", "sz:jstable.md",
-    "sz:label.md", "sz:plot.md", "sz:preprocess.md", "sz:shiny.md"
+    "sz:doctor.md", "sz:label.md", "sz:plot.md",
+    "sz:preprocess.md", "sz:rshiny.md", "sz:table.md"
   )
   expect_equal(sort(md_files), sort(expected_files))
 

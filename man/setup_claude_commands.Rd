@@ -6,14 +6,18 @@
 \usage{
 setup_claude_commands()
 }
+\arguments{
+\item{version}{Template version to use ("v1" or "v2", default: "v2")}
+}
 \description{
 This function creates Claude Code slash command markdown files in the
 ".claude/commands" directory using templates from the inst/templates directory.
 }
 \details{
 This function reads templates from the inst/templates directory and generates
-corresponding markdown files for Claude Code slash commands. Available templates
-include: preprocess, label, analysis, shiny, jstable, jskm, jsmodule, and plot.
+corresponding markdown files for Claude Code slash commands.
+v2: 6 commands (preprocess, label, table, plot, rshiny, doctor)
+v1: 8 commands (preprocess, label, analysis, shiny, jstable, jskm, jsmodule, plot)
 Claude Code slash commands use markdown format with YAML frontmatter.
 Commands support arguments using the $ARGUMENTS placeholder.
 }

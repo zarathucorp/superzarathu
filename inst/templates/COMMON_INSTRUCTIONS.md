@@ -76,6 +76,14 @@ library(DT)
 - 필요시 `install.packages()` 코드 제공
 - CRAN에 없는 패키지는 GitHub 설치 명령 제공
 
+### JS 패키지 문서 참조
+jstable, jskm, jsmodule 패키지 사용 시 상세 문서 참조:
+- `.claude/docs/jstable/` - jstable 패키지 함수별 문서
+- `.claude/docs/jskm/` - jskm 패키지 함수별 문서  
+- `.claude/docs/jsmodule/` - jsmodule 패키지 함수별 문서
+
+예시: jsmodule의 line plot 사용법을 알고 싶다면 `.claude/docs/jsmodule/line_Documentation.md` 참조
+
 ## 📝 코드 작성 규칙
 
 ### 함수 정의

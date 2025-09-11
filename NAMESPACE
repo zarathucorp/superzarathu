@@ -3,4 +3,5 @@
 export(get_templates)
 export(setup_claude_commands)
 export(setup_gemini_commands)
+export(setup_js_document)
 export(sz_setup)

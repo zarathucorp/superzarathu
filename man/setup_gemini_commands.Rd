@@ -6,14 +6,18 @@
 \usage{
 setup_gemini_commands()
 }
+\arguments{
+\item{version}{Template version to use ("v1" or "v2", default: "v2")}
+}
 \description{
 This function creates Gemini command TOML files in the ".gemini/commands"
 directory using templates from the inst/templates directory.
 }
 \details{
 This function reads templates from the inst/templates directory and generates
-corresponding TOML files for Gemini CLI. Available templates include:
-preprocess, label, analysis, shiny, jstable, jskm, jsmodule, and plot.
+corresponding TOML files for Gemini CLI.
+v2: 6 commands (preprocess, label, table, plot, rshiny, doctor)
+v1: 8 commands (preprocess, label, analysis, shiny, jstable, jskm, jsmodule, plot)
 Commands support arguments using the {{args}} placeholder in Gemini CLI.
 }
 \examples{
