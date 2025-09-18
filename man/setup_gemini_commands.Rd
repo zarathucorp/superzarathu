@@ -6,9 +6,6 @@
 \usage{
 setup_gemini_commands()
 }
-\arguments{
-\item{version}{Template version to use ("v1" or "v2", default: "v2")}
-}
 \description{
 This function creates Gemini command TOML files in the ".gemini/commands"
 directory using templates from the inst/templates directory.

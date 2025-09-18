@@ -1,3 +1,29 @@
+# superzarathu 0.2.0
+
+## New Features 📊
+
+### Excel Data Quality Assessment
+- **New Function**: `excel_health_check()` - Comprehensive Excel data quality assessment
+- **AI-Friendly Output**: JSON results with schema for better AI understanding
+- **Detailed Reports**: Markdown reports with actionable recommendations
+- **Comprehensive Checks**: 19 different quality check types including:
+  - Structural problems (merged cells, data positioning, pivot formats)
+  - Representation inconsistencies (date formats, units, boolean expressions)
+  - Value errors (whitespace, text-formatted numbers, duplicates)
+  - Missing data patterns (empty cells, placeholders, implicit missing)
+  - Hidden issues (formula errors, encoding problems)
+
+### Dependencies
+- **New Dependencies**: Added `openxlsx`, `data.table`, `jsonlite`, `stringdist`
+- **Data Preservation**: Read-only approach - never modifies original Excel files
+- **R Standards**: Converts empty strings to NA following R conventions
+
+### Output Features
+- **Timestamped Files**: `sz_excel_results_YYYYMMDD_HHMMSS.json`
+- **JSON Schema**: `sz_excel_schema.json` for AI interoperability
+- **Markdown Reports**: `sz_excel_report_YYYYMMDD_HHMMSS.md`
+- **Health Scoring**: 0-100 point health score with interpretation
+
 # superzarathu 0.1.0
 
 ## Initial Release 🎉

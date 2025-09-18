@@ -16,6 +16,7 @@
 - 🤖 **AI-Driven Workflows**: Templates optimized for AI assistants to understand and execute
 - 📊 **Data Processing**: Advanced preprocessing with clinical trial data support
 - 🩺 **Data Doctor**: Comprehensive data health check and diagnostics
+- 📋 **Excel Quality Check**: Comprehensive Excel data quality assessment with AI-friendly output
 - 🏷️ **Smart Labeling**: Automatic variable labeling with jstable integration
 - 📈 **Statistical Analysis**: Templates for Korean medical statistics packages (jstable, jskm, jsmodule)
 - 🎨 **Visualization**: Plot generation with ggplot2 and interactive graphics
@@ -89,8 +90,9 @@ After setup, use natural language commands:
 - `sz:preprocess` - Data cleaning and transformation
 - `sz:doctor` - Data health check and diagnostics
 - `sz:label` - Variable labeling and metadata management
+- `excel_health_check()` - Comprehensive Excel data quality assessment
 
-### Statistical Analysis  
+### Statistical Analysis
 - `sz:table` - Descriptive and analytical tables with jstable
 
 ### Visualization
@@ -98,6 +100,36 @@ After setup, use natural language commands:
 
 ### Shiny Development
 - `sz:rshiny` - Shiny application templates with jsmodule
+
+## Excel Data Quality Assessment
+
+The `excel_health_check()` function provides comprehensive quality assessment for Excel files:
+
+```r
+library(superzarathu)
+
+# Check all Excel files in current directory
+result <- excel_health_check()
+
+# Check specific files
+result <- excel_health_check(files = c("data1.xlsx", "data2.xlsx"))
+
+# Generate only JSON output
+result <- excel_health_check(output_format = "json")
+```
+
+### Features
+- **19 Quality Check Types**: Structural problems, representation inconsistencies, value errors, missing data, hidden issues
+- **AI-Friendly Output**: JSON results with schema for better AI understanding
+- **Detailed Reports**: Markdown reports with actionable recommendations
+- **Health Scoring**: 0-100 point health score with interpretation
+- **Data Preservation**: Read-only approach - never modifies original files
+- **R Standards**: Converts empty strings to NA following R conventions
+
+### Output Files
+- `sz_excel_results_YYYYMMDD_HHMMSS.json` - Detailed results
+- `sz_excel_schema.json` - JSON schema for AI interoperability
+- `sz_excel_report_YYYYMMDD_HHMMSS.md` - Human-readable report
 
 ## Template Features
 
@@ -162,13 +194,15 @@ project/
 - R (≥ 3.5.0)
 - data.table
 - openxlsx
-- ggplot2
+- jsonlite
+- stringdist
 
 ### Recommended Packages
 - jstable (for medical statistics)
 - jskm (for survival curves)
 - jsmodule (for Shiny modules)
 - pins (for data versioning)
+- ggplot2 (for visualization)
 
 ## Contributing
 

@@ -6,9 +6,6 @@
 \usage{
 setup_claude_commands()
 }
-\arguments{
-\item{version}{Template version to use ("v1" or "v2", default: "v2")}
-}
 \description{
 This function creates Claude Code slash command markdown files in the
 ".claude/commands" directory using templates from the inst/templates directory.

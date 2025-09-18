@@ -1,7 +1,7 @@
 # superzarathu
 
 [![GitHub](https://img.shields.io/badge/GitHub-zarathucorp%2Fsuperzarathu-blue)](https://github.com/zarathucorp/superzarathu)
-[![R Package](https://img.shields.io/badge/R%20Package-0.1.0-green)](https://github.com/zarathucorp/superzarathu)
+[![R Package](https://img.shields.io/badge/R%20Package-0.2.0-green)](https://github.com/zarathucorp/superzarathu)
 
 > AI 어시스턴트(Claude Code & Gemini CLI)를 위한 데이터 분석 워크플로우 커스텀 명령어 생성 패키지
 
@@ -16,6 +16,7 @@
 - 🤖 **AI 주도 워크플로우**: AI 어시스턴트가 이해하고 실행하기 최적화된 템플릿
 - 📊 **데이터 처리**: 임상시험 데이터 지원을 포함한 고급 전처리
 - 🩺 **데이터 닥터**: 종합적인 데이터 건강 체크 및 진단
+- 📋 **엑셀 품질 검사**: AI 친화적 출력을 제공하는 종합적인 엑셀 데이터 품질 평가
 - 🏷️ **스마트 라벨링**: jstable 통합으로 자동 변수 라벨링
 - 📈 **통계 분석**: 한국 의료 통계 패키지(jstable, jskm, jsmodule) 템플릿
 - 🎨 **시각화**: ggplot2 및 인터랙티브 그래픽 생성
@@ -89,6 +90,7 @@ sz_setup("gemini")
 - `sz:preprocess` - 데이터 정제 및 변환
 - `sz:doctor` - 데이터 건강 체크 및 진단
 - `sz:label` - 변수 라벨링 및 메타데이터 관리
+- `excel_health_check()` - 종합적인 엑셀 데이터 품질 평가
 
 ### 통계 분석
 - `sz:table` - jstable을 사용한 기술통계 및 분석 테이블
@@ -98,6 +100,36 @@ sz_setup("gemini")
 
 ### Shiny 개발
 - `sz:rshiny` - jsmodule을 사용한 Shiny 애플리케이션 템플릿
+
+## 엑셀 데이터 품질 평가
+
+`excel_health_check()` 함수는 엑셀 파일의 종합적인 품질 평가를 제공합니다:
+
+```r
+library(superzarathu)
+
+# 현재 디렉토리의 모든 엑셀 파일 검사
+result <- excel_health_check()
+
+# 특정 파일들만 검사
+result <- excel_health_check(files = c("data1.xlsx", "data2.xlsx"))
+
+# JSON 출력만 생성
+result <- excel_health_check(output_format = "json")
+```
+
+### 기능
+- **19가지 품질 검사 유형**: 구조적 문제, 표기법 불일치, 값 오류, 데이터 누락, 숨겨진 문제
+- **AI 친화적 출력**: 더 나은 AI 이해를 위한 스키마가 포함된 JSON 결과
+- **상세 보고서**: 실행 가능한 권장사항이 포함된 마크다운 보고서
+- **건강 점수**: 해석이 포함된 0-100점 건강 점수
+- **데이터 보존**: 읽기 전용 접근법 - 원본 파일을 절대 수정하지 않음
+- **R 표준**: R 관례에 따라 빈 문자열을 NA로 변환
+
+### 출력 파일
+- `sz_excel_results_YYYYMMDD_HHMMSS.json` - 상세 결과
+- `sz_excel_schema.json` - AI 상호 운용성을 위한 JSON 스키마
+- `sz_excel_report_YYYYMMDD_HHMMSS.md` - 사람이 읽기 쉬운 보고서
 
 ## 템플릿 특징
 

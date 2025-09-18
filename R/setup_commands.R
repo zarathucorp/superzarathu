@@ -110,8 +110,6 @@ get_argument_description <- function(template_name) {
 #' This function creates Gemini command TOML files in the ".gemini/commands"
 #' directory using templates from the inst/templates directory.
 #'
-#' @param version Template version to use ("v1" or "v2", default: "v2")
-#'
 #' @details
 #' This function reads templates from the inst/templates directory and generates
 #' corresponding TOML files for Gemini CLI.
@@ -189,8 +187,6 @@ setup_gemini_commands <- function() {
 #'
 #' This function creates Claude Code slash command markdown files in the
 #' ".claude/commands" directory using templates from the inst/templates directory.
-#'
-#' @param version Template version to use ("v1" or "v2", default: "v2")
 #'
 #' @details
 #' This function reads templates from the inst/templates directory and generates

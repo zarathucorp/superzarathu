@@ -79,32 +79,32 @@ test_that("get_argument_description returns expected descriptions", {
   # Test for preprocess
   desc <- get_argument_description("preprocess")
   expect_type(desc, "character")
-  expect_true(grepl("전처리|survey|csv", desc, ignore.case = TRUE))
+  expect_true(grepl("preprocess|survey|csv", desc, ignore.case = TRUE))
   
   # Test for label
   desc <- get_argument_description("label")
   expect_type(desc, "character")
-  expect_true(grepl("라벨|코드북", desc, ignore.case = TRUE))
+  expect_true(grepl("label|codebook", desc, ignore.case = TRUE))
   
   # Test for table
   desc <- get_argument_description("table")
   expect_type(desc, "character")
-  expect_true(grepl("특성표|회귀분석", desc, ignore.case = TRUE))
+  expect_true(grepl("characteristics|regression", desc, ignore.case = TRUE))
   
   # Test for plot
   desc <- get_argument_description("plot")
   expect_type(desc, "character")
-  expect_true(grepl("생존곡선|박스플롯", desc, ignore.case = TRUE))
-  
+  expect_true(grepl("survival|boxplot", desc, ignore.case = TRUE))
+
   # Test for rshiny
   desc <- get_argument_description("rshiny")
   expect_type(desc, "character")
-  expect_true(grepl("분석 앱|통계", desc, ignore.case = TRUE))
-  
+  expect_true(grepl("analysis app|statistics", desc, ignore.case = TRUE))
+
   # Test for doctor
   desc <- get_argument_description("doctor")
   expect_type(desc, "character")
-  expect_true(grepl("진단|건강|체크", desc, ignore.case = TRUE))
+  expect_true(grepl("diagnose|health|check", desc, ignore.case = TRUE))
   
   # Test for non-existent template
   desc <- get_argument_description("nonexistent")
