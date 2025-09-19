@@ -515,7 +515,7 @@ create_zarathu_project_structure <- function(project_name = "superzarathu_exampl
     }
   }
 
-  message("\n✅ Zarathu project structure created successfully!")
+  message("\nZarathu project structure created successfully!")
   message("Project type: ", type)
   message("Location: ", project_path)
 

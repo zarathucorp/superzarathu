@@ -22,9 +22,9 @@ Comprehensively checks the data quality of Excel files and generates AI-friendly
 \details{
 Check areas: Structural problems, representation inconsistencies, value errors, missing data, hidden issues
 
-🔹 **Important**: This function never modifies the original Excel files.
-🔹 Empty strings ('') are automatically treated as NA following R standards.
-🔹 Recommendations are for reference when reading/analyzing data.
+Important: This function never modifies the original Excel files.
+Empty strings ('') are automatically treated as NA following R standards.
+Recommendations are for reference when reading/analyzing data.
 }
 \examples{
 \dontrun{

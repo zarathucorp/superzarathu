@@ -2,12 +2,13 @@ Package: superzarathu
 Type: Package
 Title: Generate Custom Commands for Data Analysis Workflows
 Version: 0.2.0
-Author: Zarathu Corp <contact@zarathu.com>
+Author: Zarathu Corp <office@zarathu.com>
 Authors@R: c(
-    person("Zarathu", "Corp", email = "contact@zarathu.com", role = c("aut", "cre")),
-    person("Jinseob", "Kim", email = "jinseob2kim@zarathu.com", role = "aut")
+    person("Zarathu", "Corp", email = "office@zarathu.com", role = c("aut", "cre")),
+    person("Jinseob", "Kim", email = "jinseob2kim@zarathu.com", role = "aut"),
+    person("Jaewoong", "Heo", email = "jwheo@zarathu.com", role = "aut")
     )
-Maintainer: Zarathu Corp <contact@zarathu.com>
+Maintainer: Zarathu Corp <office@zarathu.com>
 Description: Provides templates and functions to generate custom commands for
     both Gemini CLI and Claude Code. Includes predefined workflows for data
     preprocess, label, statistical analysis, Shiny applications, and

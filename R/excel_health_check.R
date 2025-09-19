@@ -12,9 +12,9 @@
 #'
 #' Check areas: Structural problems, representation inconsistencies, value errors, missing data, hidden issues
 #'
-#' 🔹 **Important**: This function never modifies the original Excel files.
-#' 🔹 Empty strings ('') are automatically treated as NA following R standards.
-#' 🔹 Recommendations are for reference when reading/analyzing data.
+#' Important: This function never modifies the original Excel files.
+#' Empty strings ('') are automatically treated as NA following R standards.
+#' Recommendations are for reference when reading/analyzing data.
 #'
 #' @param files Vector of Excel file paths to check (if NULL, all Excel files in current directory)
 #' @param output_format Output format ("json", "report", "both", default: "both")
@@ -50,8 +50,8 @@ excel_health_check <- function(files = NULL, output_format = "both", verbose = T
 
   # Basic settings: Convert empty strings to NA for standard R missing value handling
   if (verbose) {
-    message("📋 Original file preservation: Original Excel files will not be modified")
-    message("📋 Missing value handling: Empty strings ('') converted to NA for standard processing")
+    message("Original file preservation: Original Excel files will not be modified")
+    message("Missing value handling: Empty strings ('') converted to NA for standard processing")
   }
 
   # Check file existence
@@ -97,12 +97,11 @@ excel_health_check <- function(files = NULL, output_format = "both", verbose = T
   }
 
   if (verbose) {
-    message("✅ Check complete! (Original files were not modified)")
+    message("Check complete! (Original files were not modified)")
     message("- Check time: ", round(as.numeric(end_time - start_time, units = "secs"), 2), " seconds")
     message("- Files checked: ", length(files), " files")
     message("- Patterns found: ", summary_result$total_issues, " issues")
-    message("- Health score: ", summary_result$health_score, "/100")
-    message("💡 Recommendations are for reference when reading/analyzing data")
+    message("Recommendations are for reference when reading/analyzing data")
   }
 
   return(invisible(list(
@@ -112,6 +111,7 @@ excel_health_check <- function(files = NULL, output_format = "both", verbose = T
 }
 
 #' Check and load required packages
+#' @importFrom utils installed.packages
 #' @noRd
 check_required_packages <- function() {
   required_packages <- c("openxlsx", "data.table", "jsonlite", "stringdist")
@@ -311,12 +311,13 @@ check_data_start_position <- function(data) {
 
 #' Check multiple values in one cell
 #' @param data Sheet data
+#' @importFrom utils head
 #' @noRd
 check_multiple_values_in_cell <- function(data) {
   if (nrow(data) == 0 || ncol(data) == 0) return(NULL)
 
   # Find separator patterns (/, |, ;, , etc.)
-  separators <- c("/", "\\|", ";", ",", "・")
+  separators <- c("/", "\\|", ";", ",", "\u30fb")
   multi_value_cells <- c()
 
   for (i in 1:nrow(data)) {
@@ -380,8 +381,8 @@ check_pivot_format <- function(data) {
   return(NULL)
 }
 
-#' 불필요한 요약 행/열 검사
-#' @param data 시트 데이터
+#' Check unnecessary summary rows/columns
+#' @param data Sheet data
 #' @noRd
 check_summary_rows <- function(data) {
   if (nrow(data) < 2 || ncol(data) < 2) return(NULL)
@@ -424,6 +425,7 @@ check_summary_rows <- function(data) {
 
 #' Check name inconsistency
 #' @param data Sheet data
+#' @importFrom utils head
 #' @noRd
 check_name_inconsistency <- function(data) {
   if (nrow(data) == 0 || ncol(data) == 0) return(NULL)
@@ -537,8 +539,8 @@ check_date_format_inconsistency <- function(data) {
   return(NULL)
 }
 
-#' 단위 불일치 검사
-#' @param data 시트 데이터
+#' Check unit inconsistency
+#' @param data Sheet data
 #' @noRd
 check_unit_inconsistency <- function(data) {
   if (nrow(data) == 0 || ncol(data) == 0) return(NULL)
@@ -597,7 +599,7 @@ check_boolean_inconsistency <- function(data) {
     "Y/N" = c("y", "n", "yes", "no"),
     "T/F" = c("t", "f", "true", "false", "참", "거짓"),
     "1/0" = c("1", "0"),
-    "한글" = c("예", "아니오", "있음", "없음", "완료", "미완료")
+    "korean" = c("예", "아니오", "있음", "없음", "완료", "미완료")
   )
 
   inconsistent_columns <- list()
@@ -794,7 +796,7 @@ check_special_characters <- function(data) {
   if (nrow(data) == 0 || ncol(data) == 0) return(NULL)
 
   # Potentially problematic special characters
-  problematic_chars <- c("\\*", "#", "\\n", "\\r", "\\t", "[^\\x20-\\x7E가-힣]")
+  problematic_chars <- c("\\*", "#", "\\n", "\\r", "\\t", "[^\\x20-\\x7E\uac00-\ud7a3]")
   char_names <- c("Asterisk(*)", "Hash(#)", "Newline", "Carriage Return", "Tab", "Special Characters")
 
   special_char_issues <- list()
@@ -838,6 +840,7 @@ check_special_characters <- function(data) {
 
 #' Check duplicate rows
 #' @param data Sheet data
+#' @importFrom utils head
 #' @noRd
 check_duplicate_rows <- function(data) {
   if (nrow(data) < 2) return(NULL)
@@ -1046,7 +1049,7 @@ check_encoding_issues <- function(data) {
   if (nrow(data) == 0 || ncol(data) == 0) return(NULL)
 
   # Strange character patterns due to encoding problems
-  encoding_patterns <- c("Ã", "â€", "Â", "Ç", "¿", "¾", "½")
+  encoding_patterns <- c("\u00c3", "\u00e2\u20ac", "\u00c2", "\u00c7", "\u00bf", "\u00be", "\u00bd")
   encoding_issues <- list()
 
   for (j in 1:ncol(data)) {
@@ -1114,38 +1117,18 @@ create_summary <- function(all_results, start_time, end_time) {
     }
   }
 
-  # Calculate health score (out of 100)
-  health_score <- calculate_health_score(total_issues, total_files)
 
   list(
     total_files = total_files,
     total_issues = total_issues,
     issue_types = issue_types,
-    health_score = health_score,
     analysis_time = as.numeric(end_time - start_time, units = "secs"),
     timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S")
   )
 }
 
-#' Calculate health score
-#' @param total_issues Total number of issues
-#' @param total_files Total number of files
-#' @noRd
-calculate_health_score <- function(total_issues, total_files) {
-  if (total_files == 0) return(0)
 
-  # Average issues per file
-  avg_issues_per_file <- total_issues / total_files
-
-  # Score calculation (more issues = lower score)
-  base_score <- 100
-  penalty <- min(avg_issues_per_file * 2, 80) # Maximum 80 point deduction
-
-  score <- max(base_score - penalty, 0)
-  return(round(score, 1))
-}
-
-#' JSON Schema 생성
+#' Generate JSON Schema
 #' @noRd
 generate_json_schema <- function() {
   schema <- list(
@@ -1171,12 +1154,6 @@ generate_json_schema <- function() {
             description = "Number of occurrences by issue type",
             additionalProperties = list(type = "integer")
           ),
-          health_score = list(
-            type = "number",
-            minimum = 0,
-            maximum = 100,
-            description = "Data quality health score (0-100 points)"
-          ),
           analysis_time = list(
             type = "number",
             description = "Analysis time required (seconds)"
@@ -1186,7 +1163,7 @@ generate_json_schema <- function() {
             description = "Check execution time (YYYY-MM-DD HH:MM:SS)"
           )
         ),
-        required = list("total_files", "total_issues", "health_score", "timestamp")
+        required = list("total_files", "total_issues", "timestamp")
       ),
       files = list(
         type = "object",
@@ -1327,6 +1304,7 @@ generate_json_output <- function(summary_result, all_results) {
 #' Generate markdown report
 #' @param summary_result Summary result
 #' @param all_results All file results
+#' @importFrom utils head
 #' @noRd
 generate_markdown_report <- function(summary_result, all_results) {
   # Generate timestamp
@@ -1339,32 +1317,18 @@ generate_markdown_report <- function(summary_result, all_results) {
   report_lines <- c(report_lines, "")
 
   # Summary
-  report_lines <- c(report_lines, "## 📊 Check Summary")
+  report_lines <- c(report_lines, "## Check Summary")
   report_lines <- c(report_lines, "")
   report_lines <- c(report_lines, paste("- **Check Time:** ", summary_result$timestamp))
   report_lines <- c(report_lines, paste("- **Files Checked:** ", summary_result$total_files, " files"))
   report_lines <- c(report_lines, paste("- **Total Issues:** ", summary_result$total_issues, " issues"))
-  report_lines <- c(report_lines, paste("- **Health Score:** ", summary_result$health_score, "/100"))
   report_lines <- c(report_lines, paste("- **Analysis Time:** ", round(summary_result$analysis_time, 2), " seconds"))
   report_lines <- c(report_lines, "")
 
-  # Health score interpretation
-  health_score <- summary_result$health_score
-  if (health_score >= 90) {
-    health_status <- "🟢 **Excellent** - Data quality is very good"
-  } else if (health_score >= 70) {
-    health_status <- "🟡 **Good** - Some improvements needed"
-  } else if (health_score >= 50) {
-    health_status <- "🟠 **Caution** - Significant improvements needed"
-  } else {
-    health_status <- "🔴 **Critical** - Comprehensive data cleanup required"
-  }
-  report_lines <- c(report_lines, paste("**Health Status:** ", health_status))
-  report_lines <- c(report_lines, "")
 
   # Issue Type Statistics
   if (length(summary_result$issue_types) > 0) {
-    report_lines <- c(report_lines, "## 📈 Issue Type Statistics")
+    report_lines <- c(report_lines, "## Issue Type Statistics")
     report_lines <- c(report_lines, "")
     report_lines <- c(report_lines, "| Issue Type | Count | Description |")
     report_lines <- c(report_lines, "|------------|-------|-------------|")
@@ -1400,7 +1364,7 @@ generate_markdown_report <- function(summary_result, all_results) {
   }
 
   # Detailed Results by File
-  report_lines <- c(report_lines, "## 📁 Detailed Analysis by File")
+  report_lines <- c(report_lines, "## Detailed Analysis by File")
   report_lines <- c(report_lines, "")
 
   for (file_name in names(all_results)) {
@@ -1410,7 +1374,7 @@ generate_markdown_report <- function(summary_result, all_results) {
     report_lines <- c(report_lines, "")
 
     if (!is.null(file_result$error)) {
-      report_lines <- c(report_lines, paste("❌ **Error:** ", file_result$error))
+      report_lines <- c(report_lines, paste("**Error:** ", file_result$error))
       report_lines <- c(report_lines, "")
       next
     }
@@ -1429,7 +1393,7 @@ generate_markdown_report <- function(summary_result, all_results) {
 
         if (!is.null(sheet_result$error)) {
           report_lines <- c(report_lines, paste("#### ", sheet_name, " (Error)"))
-          report_lines <- c(report_lines, paste("❌ ", sheet_result$error))
+          report_lines <- c(report_lines, paste("Error: ", sheet_result$error))
           report_lines <- c(report_lines, "")
           next
         }
@@ -1438,7 +1402,7 @@ generate_markdown_report <- function(summary_result, all_results) {
 
         if (!is.null(sheet_result$dimensions)) {
           dimensions <- sheet_result$dimensions
-          report_lines <- c(report_lines, paste("- **Size:** ", dimensions[1], "rows ×", dimensions[2], "columns"))
+          report_lines <- c(report_lines, paste("- **Size:** ", dimensions[1], "rows x", dimensions[2], "columns"))
         }
 
         if (!is.null(sheet_result$issues) && length(sheet_result$issues) > 0) {
@@ -1458,7 +1422,7 @@ generate_markdown_report <- function(summary_result, all_results) {
           }
 
           # Output by severity
-          severity_names <- c("high" = "🔴 High", "medium" = "🟡 Medium", "low" = "🟢 Low")
+          severity_names <- c("high" = "High", "medium" = "Medium", "low" = "Low")
 
           for (severity in c("high", "medium", "low")) {
             severity_issues <- issues_by_severity[[severity]]
@@ -1483,7 +1447,7 @@ generate_markdown_report <- function(summary_result, all_results) {
             }
           }
         } else {
-          report_lines <- c(report_lines, "✅ **No Issues**")
+          report_lines <- c(report_lines, "**No Issues**")
           report_lines <- c(report_lines, "")
         }
       }
@@ -1491,7 +1455,7 @@ generate_markdown_report <- function(summary_result, all_results) {
   }
 
   # Improvement Recommendations
-  report_lines <- c(report_lines, "## 🔧 Overall Improvement Recommendations")
+  report_lines <- c(report_lines, "## Overall Improvement Recommendations")
   report_lines <- c(report_lines, "")
 
   if (summary_result$total_issues == 0) {
@@ -1499,17 +1463,17 @@ generate_markdown_report <- function(summary_result, all_results) {
   } else {
     report_lines <- c(report_lines, "### Priority-based Improvement Plan")
     report_lines <- c(report_lines, "")
-    report_lines <- c(report_lines, "1. **🔴 Resolve High Severity Issues**")
+    report_lines <- c(report_lines, "1. **Resolve High Severity Issues**")
     report_lines <- c(report_lines, "   - Unmerge cells")
     report_lines <- c(report_lines, "   - Fix formula errors")
     report_lines <- c(report_lines, "   - Standardize name inconsistencies")
     report_lines <- c(report_lines, "")
-    report_lines <- c(report_lines, "2. **🟡 Improve Medium Severity Issues**")
+    report_lines <- c(report_lines, "2. **Improve Medium Severity Issues**")
     report_lines <- c(report_lines, "   - Normalize data position (start from A1)")
     report_lines <- c(report_lines, "   - Standardize date/unit formats")
     report_lines <- c(report_lines, "   - Convert text-formatted numbers")
     report_lines <- c(report_lines, "")
-    report_lines <- c(report_lines, "3. **🟢 Clean Up Low Severity Issues**")
+    report_lines <- c(report_lines, "3. **Clean Up Low Severity Issues**")
     report_lines <- c(report_lines, "   - Remove unnecessary whitespace")
     report_lines <- c(report_lines, "   - Clean up special characters")
     report_lines <- c(report_lines, "   - Standardize placeholders")
@@ -1520,7 +1484,7 @@ generate_markdown_report <- function(summary_result, all_results) {
   report_lines <- c(report_lines, paste("*Report generated at: ", Sys.time(), "*"))
   report_lines <- c(report_lines, "*Generated by: superzarathu::excel_health_check()*")
 
-  # 파일 저장
+  # Save file
   report_file <- paste0("sz_excel_report_", timestamp, ".md")
   writeLines(report_lines, report_file, useBytes = TRUE)
 
