@@ -6,6 +6,22 @@
   if (is.null(x)) y else x
 }
 
+#' Convert column number to Excel column letter(s)
+#' @param col_num Column number (1-based)
+#' @return Excel column name (A, B, ..., Z, AA, AB, ..., ZZ, AAA, ...)
+#' @noRd
+col_num_to_excel <- function(col_num) {
+  if (is.na(col_num) || col_num < 1) return("A")
+
+  result <- ""
+  while (col_num > 0) {
+    col_num <- col_num - 1
+    result <- paste0(LETTERS[(col_num %% 26) + 1], result)
+    col_num <- col_num %/% 26
+  }
+  return(result)
+}
+
 #' Excel Health Check - Excel Data Quality Assessment
 #'
 #' Comprehensively checks the data quality of Excel files and generates AI-friendly JSON and markdown reports.
@@ -210,7 +226,8 @@ check_excel_sheet <- function(file_path, sheet_name, wb) {
 
     # 1. Structural problem checks
     check_functions <- list(
-      function() check_merged_cells(wb, sheet_name),
+      function() check_merged_cells(wb, sheet_name, data),
+      function() check_header_structure(data),
       function() check_data_start_position(data),
       function() check_multiple_values_in_cell(data),
       function() check_pivot_format(data),
@@ -259,23 +276,72 @@ check_excel_sheet <- function(file_path, sheet_name, wb) {
 # Structural problem check functions
 # ==============================================
 
-#' Check merged cells
+#' Check merged cells with structure analysis
 #' @param wb Workbook object
 #' @param sheet_name Sheet name
+#' @param data Sheet data for structure analysis
 #' @noRd
-check_merged_cells <- function(wb, sheet_name) {
+check_merged_cells <- function(wb, sheet_name, data = NULL) {
   tryCatch({
     merged_cells <- wb$worksheets[[sheet_name]]$mergedCells
 
     if (length(merged_cells) > 0) {
-      return(list(
+      # Analyze merge patterns and locations
+      header_merges <- c()
+      data_merges <- c()
+
+      for (merge_range in merged_cells) {
+        # Extract row numbers from merge range (e.g., "A1:C1" -> row 1)
+        if (grepl(":", merge_range)) {
+          start_cell <- strsplit(merge_range, ":")[[1]][1]
+          row_num <- as.numeric(gsub("[A-Z]+", "", start_cell))
+
+          # Consider first 5 rows as potential header area
+          if (!is.na(row_num) && row_num <= 5) {
+            header_merges <- c(header_merges, merge_range)
+          } else {
+            data_merges <- c(data_merges, merge_range)
+          }
+        }
+      }
+
+      # Determine severity and description based on merge location
+      if (length(header_merges) > 0 && length(data_merges) == 0) {
+        # Only header merges - likely intentional structure
+        severity <- "info"
+        description <- "Hierarchical header structure detected"
+        recommendation <- "This appears to be intentional column grouping. Consider: 1) Creating composite column names from multiple header rows, 2) Using both category and subcategory information when reading data, 3) Documenting the header hierarchy for analysis"
+      } else if (length(data_merges) > 0) {
+        # Data area merges - problematic for analysis
+        severity <- "high"
+        description <- "Merged cells found in data area"
+        recommendation <- "Data area contains merged cells which can cause analysis issues. Consider: 1) Unmerging cells and filling values, 2) Using fill functions to populate empty cells, 3) Pre-processing the Excel file to normalize structure"
+      } else {
+        # Mixed or unclear merges
+        severity <- "medium"
+        description <- "Mixed merged cell structure detected"
+        recommendation <- "Complex merge pattern found. Evaluate whether merges represent intentional grouping (headers) or data issues requiring normalization"
+      }
+
+      result <- list(
         type = "merged_cells",
-        severity = "high",
+        severity = severity,
         count = length(merged_cells),
         locations = merged_cells,
-        description = "Merged cells found",
-        recommendation = "Consider unmerging cells and normalizing data for analysis"
-      ))
+        description = description,
+        recommendation = recommendation
+      )
+
+      # Add detailed structure information
+      if (length(header_merges) > 0) {
+        result$header_merges <- header_merges
+        result$structure_type = "hierarchical_headers"
+      }
+      if (length(data_merges) > 0) {
+        result$data_merges <- data_merges
+      }
+
+      return(result)
     }
     return(NULL)
   }, error = function(e) {
@@ -300,9 +366,9 @@ check_data_start_position <- function(data) {
       type = "data_start_position",
       severity = "medium",
       count = 1,
-      locations = paste0(LETTERS[first_col], first_row),
+      locations = paste0(col_num_to_excel(first_col), first_row),
       description = sprintf("Data starts at %s%d instead of A1",
-                           LETTERS[first_col], first_row),
+                           col_num_to_excel(first_col), first_row),
       recommendation = "Consider adjusting start position with range or skip options when reading data"
     ))
   }
@@ -331,7 +397,7 @@ check_multiple_values_in_cell <- function(data) {
       }))
 
       if (separator_count >= 2) {
-        multi_value_cells <- c(multi_value_cells, paste0(LETTERS[j], i))
+        multi_value_cells <- c(multi_value_cells, paste0(col_num_to_excel(j), i))
       }
     }
   }
@@ -402,7 +468,7 @@ check_summary_rows <- function(data) {
   for (j in 1:ncol(data)) {
     col_text <- paste(tolower(as.character(data[, j])), collapse = " ")
     if (any(sapply(summary_indicators, function(x) grepl(x, col_text, ignore.case = TRUE)))) {
-      summary_locations <- c(summary_locations, paste0("Col", LETTERS[j]))
+      summary_locations <- c(summary_locations, paste0("Col", col_num_to_excel(j)))
     }
   }
 
@@ -416,6 +482,95 @@ check_summary_rows <- function(data) {
       recommendation = "Summary rows/columns detected. Consider excluding these rows/columns when reading data"
     ))
   }
+  return(NULL)
+}
+
+#' Check header structure and multi-line headers
+#' @param data Sheet data
+#' @noRd
+check_header_structure <- function(data) {
+  if (nrow(data) < 2 || ncol(data) < 2) return(NULL)
+
+  # Analyze first 5 rows for header patterns
+  max_header_rows <- min(5, nrow(data))
+  header_analysis <- list()
+
+  # Check for multi-row headers
+  text_ratio_by_row <- sapply(1:max_header_rows, function(i) {
+    row_data <- as.character(data[i, ])
+    non_empty <- row_data[!is.na(row_data) & row_data != ""]
+    if (length(non_empty) == 0) return(0)
+
+    # Calculate ratio of text vs numeric content
+    numeric_count <- sum(suppressWarnings(!is.na(as.numeric(non_empty))))
+    text_ratio <- (length(non_empty) - numeric_count) / length(non_empty)
+    return(text_ratio)
+  })
+
+  # Identify likely header rows (high text ratio)
+  header_rows <- which(text_ratio_by_row > 0.7)
+
+  if (length(header_rows) > 1) {
+    # Analyze header structure patterns
+    structure_type <- "unknown"
+    description <- ""
+    recommendation <- ""
+
+    # Check for hierarchical pattern (parent categories spanning multiple columns)
+    if (length(header_rows) >= 2) {
+      row1 <- as.character(data[header_rows[1], ])
+      row2 <- as.character(data[header_rows[2], ])
+
+      # Look for pattern where row1 has fewer unique values than row2
+      row1_unique <- length(unique(row1[!is.na(row1) & row1 != ""]))
+      row2_unique <- length(unique(row2[!is.na(row2) & row2 != ""]))
+
+      # Check for empty cells in row2 that align with filled cells in row1
+      hierarchical_pattern <- sum(is.na(row2) | row2 == "") > ncol(data) * 0.3
+
+      if (row1_unique < row2_unique && hierarchical_pattern) {
+        structure_type <- "hierarchical"
+        description <- sprintf("Hierarchical header structure detected in rows %s. Row %d contains category headers, row %d contains subcategory details",
+                              paste(header_rows, collapse = "-"), header_rows[1], header_rows[2])
+        recommendation <- "This appears to be intentional hierarchical organization. Consider: 1) Creating composite column names combining both levels (e.g., 'Sales_Q1'), 2) Using skip parameter to start from data rows, 3) Manually constructing meaningful column names from both header levels"
+      } else {
+        structure_type <- "codebook"
+        description <- sprintf("Multi-row header structure detected in rows %s. This may represent variable codes and descriptions",
+                              paste(header_rows, collapse = "-"))
+        recommendation <- "This appears to be a codebook structure with codes and descriptions. Consider: 1) Using the shorter codes as column names, 2) Keeping the descriptions as metadata, 3) Reading from the data start row with manual column naming"
+      }
+
+      # Provide specific examples if possible
+      examples <- list()
+      if (ncol(data) >= 3) {
+        for (i in 1:min(3, ncol(data))) {
+          if (!is.na(row1[i]) && !is.na(row2[i])) {
+            examples[[paste0("col_", i)]] <- list(
+              level1 = row1[i],
+              level2 = row2[i]
+            )
+          }
+        }
+      }
+
+      return(list(
+        type = "header_structure",
+        severity = "info",
+        count = length(header_rows),
+        structure_type = structure_type,
+        header_rows = header_rows,
+        description = description,
+        recommendation = recommendation,
+        examples = if (length(examples) > 0) examples else NULL,
+        details = list(
+          row1_unique_values = row1_unique,
+          row2_unique_values = row2_unique,
+          total_columns = ncol(data)
+        )
+      ))
+    }
+  }
+
   return(NULL)
 }
 
@@ -465,7 +620,7 @@ check_name_inconsistency <- function(data) {
 
         if (similarity > 0.7 && similarity < 1) {
           inconsistencies <- append(inconsistencies, list(list(
-            column = LETTERS[j],
+            column = col_num_to_excel(j),
             values = c(val1, val2),
             similarity = round(similarity, 3)
           )))
@@ -521,7 +676,7 @@ check_date_format_inconsistency <- function(data) {
 
     # Inconsistency if 2 or more patterns found
     if (length(pattern_matches) > 1) {
-      inconsistent_columns[[LETTERS[j]]] <- pattern_matches
+      inconsistent_columns[[col_num_to_excel(j)]] <- pattern_matches
     }
   }
 
@@ -571,7 +726,7 @@ check_unit_inconsistency <- function(data) {
       }
 
       if (length(found_units) > 1) {
-        inconsistent_columns[[paste0(LETTERS[j], "_", group_name)]] <- found_units
+        inconsistent_columns[[paste0(col_num_to_excel(j), "_", group_name)]] <- found_units
       }
     }
   }
@@ -619,7 +774,7 @@ check_boolean_inconsistency <- function(data) {
     }
 
     if (length(found_patterns) > 1) {
-      inconsistent_columns[[LETTERS[j]]] <- found_patterns
+      inconsistent_columns[[col_num_to_excel(j)]] <- found_patterns
     }
   }
 
@@ -668,7 +823,7 @@ check_category_inconsistency <- function(data) {
     }
 
     if (length(spacing_issues) > 0) {
-      inconsistent_categories[[LETTERS[j]]] <- spacing_issues
+      inconsistent_categories[[col_num_to_excel(j)]] <- spacing_issues
     }
   }
 
@@ -720,7 +875,7 @@ check_whitespace_issues <- function(data) {
     if (tab_chars > 0) issues$tab_chars <- tab_chars
 
     if (length(issues) > 0) {
-      whitespace_issues[[LETTERS[j]]] <- issues
+      whitespace_issues[[col_num_to_excel(j)]] <- issues
     }
   }
 
@@ -770,7 +925,7 @@ check_text_formatted_numbers <- function(data) {
         !is.numeric(col_data)) issues$text_numbers <- sum(numeric_convertible)
 
     if (length(issues) > 0) {
-      text_number_columns[[LETTERS[j]]] <- issues
+      text_number_columns[[col_num_to_excel(j)]] <- issues
     }
   }
 
@@ -819,7 +974,7 @@ check_special_characters <- function(data) {
     }
 
     if (length(issues) > 0) {
-      special_char_issues[[LETTERS[j]]] <- issues
+      special_char_issues[[col_num_to_excel(j)]] <- issues
     }
   }
 
@@ -898,7 +1053,7 @@ check_missing_values <- function(data) {
   if (missing_percentage > 10) {
     result <- list(
       type = "missing_values",
-      severity = if (missing_percentage > 30) "high" else "medium",
+      severity = "medium",
       count = missing_cells,
       total_percentage = missing_percentage,
       description = sprintf("%.2f%% of all cells are empty", missing_percentage),
@@ -906,7 +1061,7 @@ check_missing_values <- function(data) {
     )
 
     if (length(high_missing_cols) > 0) {
-      result$high_missing_columns <- paste0(LETTERS[high_missing_cols], " (",
+      result$high_missing_columns <- paste0(sapply(high_missing_cols, col_num_to_excel), " (",
                                            column_missing[high_missing_cols], "%)")
     }
 
@@ -930,10 +1085,11 @@ check_placeholder_usage <- function(data) {
     for (placeholder in placeholders) {
       count <- sum(col_data == placeholder, na.rm = TRUE)
       if (count > 0) {
-        if (is.null(placeholder_found[[LETTERS[j]]])) {
-          placeholder_found[[LETTERS[j]]] <- list()
+        col_name <- col_num_to_excel(j)
+        if (is.null(placeholder_found[[col_name]])) {
+          placeholder_found[[col_name]] <- list()
         }
-        placeholder_found[[LETTERS[j]]][[placeholder]] <- count
+        placeholder_found[[col_name]][[placeholder]] <- count
       }
     }
   }
@@ -980,7 +1136,7 @@ check_implicit_missing <- function(data) {
         }
 
         if (empty_count >= 2) {
-          implicit_missing[[paste0(LETTERS[j], i)]] <- empty_count
+          implicit_missing[[paste0(col_num_to_excel(j), i)]] <- empty_count
         }
       }
     }
@@ -1019,10 +1175,11 @@ check_formula_errors <- function(data) {
     for (error_pattern in error_patterns) {
       count <- sum(grepl(error_pattern, col_data, fixed = TRUE), na.rm = TRUE)
       if (count > 0) {
-        if (is.null(error_found[[LETTERS[j]]])) {
-          error_found[[LETTERS[j]]] <- list()
+        col_name <- col_num_to_excel(j)
+        if (is.null(error_found[[col_name]])) {
+          error_found[[col_name]] <- list()
         }
-        error_found[[LETTERS[j]]][[error_pattern]] <- count
+        error_found[[col_name]][[error_pattern]] <- count
       }
     }
   }
@@ -1064,7 +1221,7 @@ check_encoding_issues <- function(data) {
     }
 
     if (issue_count > 0) {
-      encoding_issues[[LETTERS[j]]] <- issue_count
+      encoding_issues[[col_num_to_excel(j)]] <- issue_count
     }
   }
 
@@ -1221,7 +1378,7 @@ generate_json_schema <- function() {
                         type = list(
                           type = "string",
                           enum = list(
-                            "merged_cells", "data_start_position", "multiple_values_in_cell",
+                            "merged_cells", "header_structure", "data_start_position", "multiple_values_in_cell",
                             "pivot_format", "summary_rows", "name_inconsistency",
                             "date_format_inconsistency", "unit_inconsistency",
                             "boolean_inconsistency", "category_inconsistency",
@@ -1234,7 +1391,7 @@ generate_json_schema <- function() {
                         ),
                         severity = list(
                           type = "string",
-                          enum = list("low", "medium", "high"),
+                          enum = list("low", "medium", "high", "info"),
                           description = "Severity level"
                         ),
                         count = list(
@@ -1335,6 +1492,7 @@ generate_markdown_report <- function(summary_result, all_results) {
 
     issue_descriptions <- list(
       "merged_cells" = "Merged cells",
+      "header_structure" = "Multi-level header structure",
       "data_start_position" = "Data starting at non-A1 position",
       "multiple_values_in_cell" = "Multiple values in one cell",
       "pivot_format" = "Pivot table format",
@@ -1413,7 +1571,8 @@ generate_markdown_report <- function(summary_result, all_results) {
           issues_by_severity <- list(
             "high" = list(),
             "medium" = list(),
-            "low" = list()
+            "low" = list(),
+            "info" = list()
           )
 
           for (issue in sheet_result$issues) {
@@ -1422,9 +1581,9 @@ generate_markdown_report <- function(summary_result, all_results) {
           }
 
           # Output by severity
-          severity_names <- c("high" = "High", "medium" = "Medium", "low" = "Low")
+          severity_names <- c("high" = "High", "medium" = "Medium", "low" = "Low", "info" = "Info")
 
-          for (severity in c("high", "medium", "low")) {
+          for (severity in c("high", "medium", "low", "info")) {
             severity_issues <- issues_by_severity[[severity]]
             if (length(severity_issues) > 0) {
               report_lines <- c(report_lines, paste("**Severity:", severity_names[severity], "**"))
