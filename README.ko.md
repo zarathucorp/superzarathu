@@ -87,18 +87,22 @@ sz_setup("gemini")
 ## 사용 가능한 명령어
 
 ### 데이터 처리
+
 - `sz:preprocess` - 데이터 정제 및 변환
 - `sz:doctor` - 데이터 건강 체크 및 진단
 - `sz:label` - 변수 라벨링 및 메타데이터 관리
 - `excel_health_check()` - 종합적인 엑셀 데이터 품질 평가
 
 ### 통계 분석
+
 - `sz:table` - jstable을 사용한 기술통계 및 분석 테이블
 
 ### 시각화
+
 - `sz:plot` - ggplot2와 jskm을 사용한 정적 및 인터랙티브 플롯
 
 ### Shiny 개발
+
 - `sz:rshiny` - jsmodule을 사용한 Shiny 애플리케이션 템플릿
 
 ## 엑셀 데이터 품질 평가
@@ -119,14 +123,17 @@ result <- excel_health_check(output_format = "json")
 ```
 
 ### 기능
+
 - **19가지 품질 검사 유형**: 구조적 문제, 표기법 불일치, 값 오류, 데이터 누락, 숨겨진 문제
+- **헤더 구조 시각화**: 알고리즘 감지 결과와 실제 내용을 비교할 수 있는 확장 컨텍스트 제공
+- **AI/인간 분석 지원**: 코드북/예시 행과 실제 헤더를 구분할 수 있는 상세 시각화
 - **AI 친화적 출력**: 더 나은 AI 이해를 위한 스키마가 포함된 JSON 결과
 - **상세 보고서**: 실행 가능한 권장사항이 포함된 마크다운 보고서
-- **건강 점수**: 해석이 포함된 0-100점 건강 점수
 - **데이터 보존**: 읽기 전용 접근법 - 원본 파일을 절대 수정하지 않음
 - **R 표준**: R 관례에 따라 빈 문자열을 NA로 변환
 
 ### 출력 파일
+
 - `sz_excel_results_YYYYMMDD_HHMMSS.json` - 상세 결과
 - `sz_excel_schema.json` - AI 상호 운용성을 위한 JSON 스키마
 - `sz_excel_report_YYYYMMDD_HHMMSS.md` - 사람이 읽기 쉬운 보고서
@@ -134,6 +141,7 @@ result <- excel_health_check(output_format = "json")
 ## 템플릿 특징
 
 ### 고급 데이터 전처리
+
 - 📁 `data/raw/`에서 자동 파일 탐지
 - 🔄 임상시험 반복 측정 처리 (V1, V2, V3)
 - 📅 지능형 날짜 변환 및 나이 계산
@@ -141,6 +149,7 @@ result <- excel_health_check(output_format = "json")
 - 📌 S3/로컬 저장소를 위한 pins 패키지 통합
 
 ### 데이터 건강 체크 (Doctor)
+
 - 🎯 데이터 품질 점수 (A+ ~ F 등급)
 - 🔍 자동 패턴 감지 (반복 측정, 임상시험, 설문조사)
 - ⚠️ 컬럼별 문제점 식별
@@ -148,6 +157,7 @@ result <- excel_health_check(output_format = "json")
 - 📄 상세 진단이 포함된 Markdown 리포트 생성
 
 ### 스마트 라벨링 시스템
+
 - 🏷️ jstable::mk.lev() 통합
 - 🔢 자동 0/1 → No/Yes 변환
 - 📊 Factor/continuous 변수 자동 분류
@@ -159,6 +169,7 @@ result <- excel_health_check(output_format = "json")
 템플릿은 2단계 접근법을 사용합니다:
 
 1. **탐색 단계** (직접 실행)
+
    ```bash
    Rscript -e "str(data, list.len=5)"
    ```
@@ -191,12 +202,14 @@ project/
 ## 시스템 요구사항
 
 ### 핵심 의존성
+
 - R (≥ 3.5.0)
 - data.table
 - openxlsx
 - ggplot2
 
 ### 권장 패키지
+
 - jstable (의료 통계)
 - jskm (생존 곡선)
 - jsmodule (Shiny 모듈)
@@ -272,6 +285,7 @@ project/
 ## 지원
 
 문제 및 질문:
+
 - 🐛 [버그 신고](https://github.com/zarathucorp/superzarathu/issues)
 - 💡 [기능 요청](https://github.com/zarathucorp/superzarathu/issues)
 - 📧 [지원 문의](mailto:office@zarathu.com)

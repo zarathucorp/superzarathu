@@ -273,6 +273,182 @@ check_excel_sheet <- function(file_path, sheet_name, wb) {
 }
 
 # ==============================================
+# AI Visual Header Detection Helper Functions
+# ==============================================
+
+#' Create visual matrix for AI header detection with enhanced context
+#' @param data Sheet data
+#' @param detected_headers Vector of detected header row indices
+#' @param max_rows Maximum rows to analyze (default: 10)
+#' @param max_cols Maximum columns to analyze (default: 15)
+#' @noRd
+create_visual_matrix <- function(data, detected_headers = NULL, max_rows = 10, max_cols = 15) {
+  # If headers detected, show them + at least 10 additional rows for context
+  if (!is.null(detected_headers) && length(detected_headers) > 0) {
+    max_header_row <- max(detected_headers)
+    # Show detected headers + 10 additional rows for AI judgment
+    max_rows <- min(max_header_row + 10, nrow(data), max_rows)
+  }
+
+  max_rows <- min(max_rows, nrow(data))
+  max_cols <- min(max_cols, ncol(data))
+
+  visual_matrix <- matrix("", nrow = max_rows, ncol = max_cols)
+
+  for (i in 1:max_rows) {
+    for (j in 1:max_cols) {
+      cell_val <- as.character(data[i, j])
+
+      if (is.na(cell_val)) {
+        visual_matrix[i, j] <- "___"
+      } else if (nchar(cell_val) > 15) {
+        visual_matrix[i, j] <- "LONG_TEXT"
+      } else if (suppressWarnings(!is.na(as.numeric(cell_val)))) {
+        visual_matrix[i, j] <- "NUM"
+      } else {
+        visual_matrix[i, j] <- "TEXT"
+      }
+    }
+  }
+
+  return(visual_matrix)
+}
+
+#' Generate enhanced AI judgment with row classifications
+#' @param data Sheet data
+#' @param visual_matrix Visual representation matrix
+#' @param detected_headers Vector of detected header row indices
+#' @param header_scores Header scores for detected rows
+#' @noRd
+generate_enhanced_visualization <- function(data, visual_matrix, detected_headers = NULL, header_scores = NULL) {
+  # Classify each row for AI understanding
+  row_classifications <- c()
+  for (i in 1:nrow(visual_matrix)) {
+    if (!is.null(detected_headers) && i %in% detected_headers) {
+      # Get score for this header row
+      score_idx <- which(detected_headers == i)
+      if (!is.null(header_scores) && length(header_scores) >= score_idx) {
+        score <- header_scores[score_idx]
+        if (score > 0.7) {
+          row_classifications[i] <- "HEADER-HIGH"
+        } else if (score > 0.5) {
+          row_classifications[i] <- "HEADER-MED"
+        } else {
+          row_classifications[i] <- "HEADER-LOW"
+        }
+      } else {
+        row_classifications[i] <- "HEADER"
+      }
+    } else {
+      row_classifications[i] <- "DATA"
+    }
+  }
+
+  # Create enhanced visual representation string
+  visual_str <- ""
+  for (i in 1:nrow(visual_matrix)) {
+    row_pattern <- paste(sprintf("%-10s", visual_matrix[i, ]), collapse = " | ")
+    classification <- sprintf("[%s]", row_classifications[i])
+    visual_str <- paste0(visual_str, sprintf("Row %2d: %s %s\n", i, row_pattern, classification))
+  }
+
+  # Extract sample values for all shown rows
+  sample_values <- ""
+  for (i in 1:min(nrow(visual_matrix), nrow(data))) {
+    samples <- c()
+    for (j in 1:min(5, ncol(data))) {
+      cell <- as.character(data[i, j])
+      if (!is.na(cell)) {
+        if (nchar(cell) > 15) {
+          samples <- c(samples, paste0(substr(cell, 1, 15), "..."))
+        } else {
+          samples <- c(samples, cell)
+        }
+      } else {
+        samples <- c(samples, "")
+      }
+    }
+    sample_values <- paste0(sample_values, sprintf("Row %d: %s\n", i, paste(samples, collapse=" | ")))
+  }
+
+  # Generate enhanced AI judgment hint
+  ai_hint <- paste0(
+    "=== Header Detection Visualization ===\n",
+    "⚠️  ALGORITHM DETECTED (Reference Only): Row ", paste(detected_headers, collapse=", "), "\n",
+    if (!is.null(header_scores)) paste("Detection Scores: ", paste(round(header_scores, 3), collapse=", "), "\n") else "",
+    "Showing Extended Context (Rows 1-", nrow(visual_matrix), ") for Analysis:\n\n",
+    visual_str,
+    "\nActual Content Samples:\n",
+    sample_values,
+    "\nHuman/AI Analysis Guidelines:\n",
+    "- Algorithm results are REFERENCE ONLY - examine actual content\n",
+    "- Check for CODEBOOK/EXAMPLE rows (e.g., '1-option\\n2-option')\n",
+    "- Verify true HEADER rows vs DATA rows vs EXAMPLE rows\n",
+    "- HEADER-HIGH/MED/LOW: Algorithm confidence levels\n",
+    "- Look for actual data start (usually NUM patterns)\n",
+    "- Consider multi-level header structures\n",
+    "- Final decision should be based on content analysis above"
+  )
+
+  # Return structured data for JSON/Report
+  return(list(
+    ai_hint = ai_hint,
+    visual_matrix = visual_matrix,
+    row_classifications = row_classifications,
+    sample_values = strsplit(sample_values, "\n")[[1]],
+    detected_headers = detected_headers,
+    header_scores = header_scores,
+    context_rows = nrow(visual_matrix)
+  ))
+}
+
+#' Calculate comprehensive header score combining multiple factors
+#' @param data Sheet data
+#' @param row_idx Row index to analyze
+#' @noRd
+calculate_header_score <- function(data, row_idx) {
+  if (row_idx > nrow(data)) return(0)
+
+  row_data <- as.character(data[row_idx, ])
+  non_empty <- row_data[!is.na(row_data) & row_data != ""]
+
+  if (length(non_empty) == 0) return(0)
+
+  # 1. String length score (25%)
+  avg_length <- mean(nchar(non_empty))
+  max_length <- max(nchar(non_empty))
+  length_score <- pmin(1, (avg_length / 15) * 0.7 + (max_length / 50) * 0.3)
+
+  # 2. Special character score (20%)
+  has_newline <- any(grepl("\\r\\n|\\n", non_empty))
+  has_colon <- any(grepl(":", non_empty))
+  has_parenthesis <- any(grepl("[()]", non_empty))
+  special_score <- (has_newline * 0.4 + has_colon * 0.3 + has_parenthesis * 0.3)
+
+  # 3. Unique ratio score (20%)
+  unique_ratio <- length(unique(non_empty)) / length(non_empty)
+  unique_score <- pmin(1, unique_ratio * 1.5)
+
+  # 4. Empty pattern score (15%)
+  empty_count <- sum(is.na(row_data))
+  total_cols <- length(row_data)
+  empty_ratio <- empty_count / total_cols
+  # High empty ratio can indicate header structure (sparse headers)
+  empty_score <- if (empty_ratio > 0.7) 0.8 else if (empty_ratio > 0.3) 0.4 else 0.1
+
+  # 5. Type consistency score (20%)
+  numeric_count <- sum(suppressWarnings(!is.na(as.numeric(non_empty))))
+  text_ratio <- (length(non_empty) - numeric_count) / length(non_empty)
+  type_score <- text_ratio
+
+  # Combined score
+  total_score <- length_score * 0.25 + special_score * 0.20 + unique_score * 0.20 +
+                empty_score * 0.15 + type_score * 0.20
+
+  return(total_score)
+}
+
+# ==============================================
 # Structural problem check functions
 # ==============================================
 
@@ -460,7 +636,7 @@ check_summary_rows <- function(data) {
   for (i in 1:nrow(data)) {
     row_text <- paste(tolower(as.character(data[i, ])), collapse = " ")
     if (any(sapply(summary_indicators, function(x) grepl(x, row_text, ignore.case = TRUE)))) {
-      summary_locations <- c(summary_locations, paste0("Row", i))
+      summary_locations <- c(summary_locations, paste0("Row ", i))
     }
   }
 
@@ -468,7 +644,7 @@ check_summary_rows <- function(data) {
   for (j in 1:ncol(data)) {
     col_text <- paste(tolower(as.character(data[, j])), collapse = " ")
     if (any(sapply(summary_indicators, function(x) grepl(x, col_text, ignore.case = TRUE)))) {
-      summary_locations <- c(summary_locations, paste0("Col", col_num_to_excel(j)))
+      summary_locations <- c(summary_locations, paste0("Column ", col_num_to_excel(j)))
     }
   }
 
@@ -485,90 +661,125 @@ check_summary_rows <- function(data) {
   return(NULL)
 }
 
-#' Check header structure and multi-line headers
+#' Check header structure with AI visual judgment
 #' @param data Sheet data
 #' @noRd
 check_header_structure <- function(data) {
   if (nrow(data) < 2 || ncol(data) < 2) return(NULL)
 
-  # Analyze first 5 rows for header patterns
-  max_header_rows <- min(5, nrow(data))
-  header_analysis <- list()
+  # Analyze first 7 rows for header patterns (increased from 5)
+  max_header_rows <- min(7, nrow(data))
 
-  # Check for multi-row headers
-  text_ratio_by_row <- sapply(1:max_header_rows, function(i) {
-    row_data <- as.character(data[i, ])
-    non_empty <- row_data[!is.na(row_data) & row_data != ""]
-    if (length(non_empty) == 0) return(0)
-
-    # Calculate ratio of text vs numeric content
-    numeric_count <- sum(suppressWarnings(!is.na(as.numeric(non_empty))))
-    text_ratio <- (length(non_empty) - numeric_count) / length(non_empty)
-    return(text_ratio)
+  # Calculate header scores first to inform visualization
+  header_scores <- sapply(1:max_header_rows, function(i) {
+    calculate_header_score(data, i)
   })
 
-  # Identify likely header rows (high text ratio)
-  header_rows <- which(text_ratio_by_row > 0.7)
+  # Identify header rows using thresholds
+  primary_headers <- which(header_scores > 0.6)
+  secondary_headers <- which(header_scores > 0.4 & header_scores <= 0.6)
 
-  if (length(header_rows) > 1) {
-    # Analyze header structure patterns
-    structure_type <- "unknown"
-    description <- ""
-    recommendation <- ""
+  # Preliminary header detection for visualization
+  preliminary_headers <- sort(unique(c(primary_headers, secondary_headers)))
 
-    # Check for hierarchical pattern (parent categories spanning multiple columns)
-    if (length(header_rows) >= 2) {
-      row1 <- as.character(data[header_rows[1], ])
-      row2 <- as.character(data[header_rows[2], ])
+  # Generate enhanced visual matrix with detected headers context
+  visual_matrix <- create_visual_matrix(data, preliminary_headers, max_header_rows + 10, min(15, ncol(data)))
 
-      # Look for pattern where row1 has fewer unique values than row2
-      row1_unique <- length(unique(row1[!is.na(row1) & row1 != ""]))
-      row2_unique <- length(unique(row2[!is.na(row2) & row2 != ""]))
+  # Check for adjacent header pattern (Row 1 + Row 2 pattern)
+  if (length(primary_headers) == 0 && length(secondary_headers) > 0) {
+    # Check if Row 1 is obvious header even with lower score
+    row1_data <- as.character(data[1, ])
+    row1_non_empty <- row1_data[!is.na(row1_data) & row1_data != ""]
 
-      # Check for empty cells in row2 that align with filled cells in row1
-      hierarchical_pattern <- sum(is.na(row2) | row2 == "") > ncol(data) * 0.3
+    if (length(row1_non_empty) > 0) {
+      # Check for header indicators in Row 1
+      has_long_text <- any(nchar(row1_non_empty) > 10)
+      has_korean <- any(grepl("[ㄱ-ㅎㅏ-ㅣ가-힣]", row1_non_empty))
+      has_special_chars <- any(grepl("[():]", row1_non_empty))
 
-      if (row1_unique < row2_unique && hierarchical_pattern) {
-        structure_type <- "hierarchical"
-        description <- sprintf("Hierarchical header structure detected in rows %s. Row %d contains category headers, row %d contains subcategory details",
-                              paste(header_rows, collapse = "-"), header_rows[1], header_rows[2])
-        recommendation <- "This appears to be intentional hierarchical organization. Consider: 1) Creating composite column names combining both levels (e.g., 'Sales_Q1'), 2) Using skip parameter to start from data rows, 3) Manually constructing meaningful column names from both header levels"
-      } else {
-        structure_type <- "codebook"
-        description <- sprintf("Multi-row header structure detected in rows %s. This may represent variable codes and descriptions",
-                              paste(header_rows, collapse = "-"))
-        recommendation <- "This appears to be a codebook structure with codes and descriptions. Consider: 1) Using the shorter codes as column names, 2) Keeping the descriptions as metadata, 3) Reading from the data start row with manual column naming"
+      if (has_long_text || has_korean || has_special_chars) {
+        primary_headers <- c(1, secondary_headers)
       }
-
-      # Provide specific examples if possible
-      examples <- list()
-      if (ncol(data) >= 3) {
-        for (i in 1:min(3, ncol(data))) {
-          if (!is.na(row1[i]) && !is.na(row2[i])) {
-            examples[[paste0("col_", i)]] <- list(
-              level1 = row1[i],
-              level2 = row2[i]
-            )
-          }
-        }
-      }
-
-      return(list(
-        type = "header_structure",
-        severity = "info",
-        count = length(header_rows),
-        structure_type = structure_type,
-        header_rows = header_rows,
-        description = description,
-        recommendation = recommendation,
-        examples = if (length(examples) > 0) examples else NULL,
-        details = list(
-          row1_unique_values = row1_unique,
-          row2_unique_values = row2_unique,
-          total_columns = ncol(data)
-        )
-      ))
     }
+  }
+
+  # Combine all detected headers
+  all_headers <- sort(unique(c(primary_headers, secondary_headers)))
+
+  if (length(all_headers) >= 1) {
+    # Generate enhanced visualization with row classifications
+    enhanced_viz <- generate_enhanced_visualization(data, visual_matrix, all_headers, header_scores[all_headers])
+
+    # Determine structure type and severity
+    structure_type <- "single_header"
+    severity <- "medium"  # Upgraded from "info"
+
+    if (length(all_headers) > 1) {
+      structure_type <- "multi_level_header"
+      severity <- "medium"
+    }
+
+    # Create description based on detected patterns
+    if (length(all_headers) == 1) {
+      description <- sprintf("Single header row detected at Row %d", all_headers[1])
+      recommendation <- sprintf("Consider using skip=%d parameter when reading data to start from Row %d",
+                               all_headers[1], all_headers[1] + 1)
+    } else {
+      # Check for hierarchical vs codebook pattern
+      if (1 %in% all_headers && 2 %in% all_headers) {
+        row1 <- as.character(data[1, ])
+        row2 <- as.character(data[2, ])
+
+        row1_non_empty <- row1[!is.na(row1) & row1 != ""]
+        row2_non_empty <- row2[!is.na(row2) & row2 != ""]
+
+        # Determine if it's hierarchical or sequential
+        row2_empty_ratio <- sum(is.na(row2) | row2 == "") / length(row2)
+
+        if (row2_empty_ratio > 0.5) {
+          structure_type <- "hierarchical_headers"
+          description <- sprintf("Hierarchical header structure detected: Row %d (main headers) + Row %d (sub-headers)",
+                                all_headers[1], all_headers[2])
+          recommendation <- "Multi-level header structure found. Consider: 1) Creating composite column names (e.g., 'MainCategory_SubCategory'), 2) Reading from data start row with custom column names, 3) Using both header levels for complete context"
+        } else {
+          structure_type <- "sequential_headers"
+          description <- sprintf("Sequential header rows detected in rows %s", paste(all_headers, collapse = ", "))
+          recommendation <- "Multiple header rows found. Consider: 1) Determining which row contains the primary column names, 2) Using appropriate skip parameter, 3) Manually handling multi-row header structure"
+        }
+      } else {
+        description <- sprintf("Multi-row header structure detected in rows %s", paste(all_headers, collapse = ", "))
+        recommendation <- "Complex header structure detected. Carefully examine the data to determine appropriate reading strategy"
+      }
+    }
+
+    # Create enhanced result with comprehensive visualization
+    result <- list(
+      type = "header_structure",
+      severity = severity,
+      count = length(all_headers),
+      structure_type = structure_type,
+      header_rows = all_headers,
+      header_scores = round(header_scores[all_headers], 3),
+      description = description,
+      recommendation = recommendation,
+      ai_visual_analysis = enhanced_viz$ai_hint,
+      visualization = list(
+        detected_headers = enhanced_viz$detected_headers,
+        header_scores = enhanced_viz$header_scores,
+        context_rows = enhanced_viz$context_rows,
+        visual_matrix = enhanced_viz$visual_matrix,
+        row_classifications = enhanced_viz$row_classifications,
+        sample_values = enhanced_viz$sample_values
+      ),
+      details = list(
+        primary_headers = primary_headers,
+        secondary_headers = secondary_headers,
+        max_rows_analyzed = max_header_rows,
+        detection_method = "combined_logic_and_visual"
+      )
+    )
+
+    return(result)
   }
 
   return(NULL)
@@ -1413,6 +1624,48 @@ generate_json_schema <- function() {
                         ),
                         details = list(
                           description = "Detailed information about the issue (structure varies by issue type)"
+                        ),
+                        ai_visual_analysis = list(
+                          type = "string",
+                          description = "AI-readable visualization text for header structure analysis"
+                        ),
+                        visualization = list(
+                          type = "object",
+                          description = "Enhanced visualization data for header structure analysis",
+                          properties = list(
+                            detected_headers = list(
+                              type = "array",
+                              items = list(type = "integer"),
+                              description = "Row numbers detected as headers by algorithm"
+                            ),
+                            header_scores = list(
+                              type = "array",
+                              items = list(type = "number"),
+                              description = "Confidence scores for detected headers"
+                            ),
+                            context_rows = list(
+                              type = "integer",
+                              description = "Number of rows shown for analysis context"
+                            ),
+                            visual_matrix = list(
+                              type = "array",
+                              items = list(
+                                type = "array",
+                                items = list(type = "string")
+                              ),
+                              description = "Visual representation matrix (TEXT/NUM/LONG_TEXT/___)"
+                            ),
+                            row_classifications = list(
+                              type = "array",
+                              items = list(type = "string"),
+                              description = "Classification of each row (HEADER-HIGH/MED/LOW/DATA)"
+                            ),
+                            sample_values = list(
+                              type = "array",
+                              items = list(type = "string"),
+                              description = "Actual sample values for analysis"
+                            )
+                          )
                         )
                       ),
                       required = list("type", "severity", "count", "description", "recommendation")
@@ -1601,6 +1854,42 @@ generate_markdown_report <- function(summary_result, all_results) {
                   report_lines <- c(report_lines, paste("  - Location: ", paste(locations, collapse = ", ")))
                 }
                 report_lines <- c(report_lines, paste("  - Recommendation: ", issue$recommendation))
+
+                # Add visualization for header structure issues
+                if (issue$type == "header_structure" && !is.null(issue$visualization)) {
+                  viz <- issue$visualization
+                  report_lines <- c(report_lines, "")
+                  report_lines <- c(report_lines, "  **Header Structure Visualization:**")
+                  report_lines <- c(report_lines, "  ```")
+                  report_lines <- c(report_lines, paste("  Detected Headers: Row", paste(viz$detected_headers, collapse=", ")))
+                  if (!is.null(viz$header_scores)) {
+                    report_lines <- c(report_lines, paste("  Algorithm Scores:", paste(round(viz$header_scores, 3), collapse=", ")))
+                  }
+                  report_lines <- c(report_lines, paste("  Context Rows: 1-", viz$context_rows))
+                  report_lines <- c(report_lines, "")
+
+                  # Visual matrix display
+                  for (i in 1:nrow(viz$visual_matrix)) {
+                    row_pattern <- paste(sprintf("%-10s", viz$visual_matrix[i, ]), collapse=" | ")
+                    classification <- sprintf("[%s]", viz$row_classifications[i])
+                    report_lines <- c(report_lines, sprintf("  Row %2d: %s %s", i, row_pattern, classification))
+                  }
+
+                  report_lines <- c(report_lines, "")
+                  report_lines <- c(report_lines, "  Sample Values:")
+                  for (sample_line in viz$sample_values[viz$sample_values != ""]) {
+                    report_lines <- c(report_lines, paste("  ", sample_line))
+                  }
+
+                  report_lines <- c(report_lines, "")
+                  report_lines <- c(report_lines, "  Legend:")
+                  report_lines <- c(report_lines, "  - HEADER-HIGH/MED/LOW: Algorithm confidence levels")
+                  report_lines <- c(report_lines, "  - DATA: Data content rows")
+                  report_lines <- c(report_lines, "  - TEXT/NUM: Cell content types")
+                  report_lines <- c(report_lines, "  - ___: Empty cells")
+                  report_lines <- c(report_lines, "  ```")
+                }
+
                 report_lines <- c(report_lines, "")
               }
             }

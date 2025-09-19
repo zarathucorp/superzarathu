@@ -68,7 +68,7 @@ After setup, use natural language commands:
 "check data health"
 "find data problems"
 
-# Data labeling  
+# Data labeling
 "label the data"
 "apply jstable labeling"
 
@@ -87,18 +87,22 @@ After setup, use natural language commands:
 ## Available Commands
 
 ### Data Processing
+
 - `sz:preprocess` - Data cleaning and transformation
 - `sz:doctor` - Data health check and diagnostics
 - `sz:label` - Variable labeling and metadata management
 - `excel_health_check()` - Comprehensive Excel data quality assessment
 
 ### Statistical Analysis
+
 - `sz:table` - Descriptive and analytical tables with jstable
 
 ### Visualization
+
 - `sz:plot` - Static and interactive plots with ggplot2 and jskm
 
 ### Shiny Development
+
 - `sz:rshiny` - Shiny application templates with jsmodule
 
 ## Excel Data Quality Assessment
@@ -119,14 +123,15 @@ result <- excel_health_check(output_format = "json")
 ```
 
 ### Features
+
 - **19 Quality Check Types**: Structural problems, representation inconsistencies, value errors, missing data, hidden issues
 - **AI-Friendly Output**: JSON results with schema for better AI understanding
 - **Detailed Reports**: Markdown reports with actionable recommendations
-- **Health Scoring**: 0-100 point health score with interpretation
 - **Data Preservation**: Read-only approach - never modifies original files
 - **R Standards**: Converts empty strings to NA following R conventions
 
 ### Output Files
+
 - `sz_excel_results_YYYYMMDD_HHMMSS.json` - Detailed results
 - `sz_excel_schema.json` - JSON schema for AI interoperability
 - `sz_excel_report_YYYYMMDD_HHMMSS.md` - Human-readable report
@@ -134,6 +139,7 @@ result <- excel_health_check(output_format = "json")
 ## Template Features
 
 ### Advanced Data Preprocessing
+
 - 📁 Automatic file detection in `data/raw/`
 - 🔄 Clinical trial repeated measures handling (V1, V2, V3)
 - 📅 Intelligent date conversion and age calculation
@@ -141,6 +147,7 @@ result <- excel_health_check(output_format = "json")
 - 📌 pins package integration for S3/local storage
 
 ### Data Health Check (Doctor)
+
 - 🎯 Data quality scoring (A+ to F grade)
 - 🔍 Automatic pattern detection (repeated measures, clinical trials, surveys)
 - ⚠️ Issue identification per column
@@ -148,6 +155,7 @@ result <- excel_health_check(output_format = "json")
 - 📄 Markdown report generation with detailed diagnostics
 
 ### Smart Labeling System
+
 - 🏷️ jstable::mk.lev() integration
 - 🔢 Automatic 0/1 to No/Yes conversion
 - 📊 Factor/continuous variable classification
@@ -159,6 +167,7 @@ result <- excel_health_check(output_format = "json")
 Templates use a 2-stage approach:
 
 1. **Exploration Stage** (Direct execution)
+
    ```bash
    Rscript -e "str(data, list.len=5)"
    ```
@@ -191,6 +200,7 @@ project/
 ## Requirements
 
 ### Core Dependencies
+
 - R (≥ 3.5.0)
 - data.table
 - openxlsx
@@ -198,6 +208,7 @@ project/
 - stringdist
 
 ### Recommended Packages
+
 - jstable (for medical statistics)
 - jskm (for survival curves)
 - jsmodule (for Shiny modules)
@@ -232,6 +243,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 For issues and questions:
+
 - 🐛 [Report bugs](https://github.com/zarathucorp/superzarathu/issues)
 - 💡 [Request features](https://github.com/zarathucorp/superzarathu/issues)
 - 📧 [Contact support](mailto:office@zarathu.com)

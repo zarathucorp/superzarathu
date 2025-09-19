@@ -98,3 +98,4 @@ tests/testthat/Rplots.pdf
 # Generated command directories (project-specific)
 .gemini/
 .claude/
+*.xlsx
